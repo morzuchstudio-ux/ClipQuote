@@ -59,16 +59,14 @@ test('skip controls seek each distance, clamp at video bounds and preserve play/
  await expect(page.getByLabel('End',{exact:true})).toHaveValue('10');
 });
 
-for(const blocked of [false,true]) test(`opening clip attempts autoplay; blocked=${blocked}`,async({page})=>{
- await mockYouTube(page);await page.addInitScript(blocked=>window.testBlockAutoplay=blocked,blocked);
+test('opening a clip waits for Play and retains the selected range',async({page})=>{
+ await mockYouTube(page);
  await page.goto('/#'+new URLSearchParams({clip:JSON.stringify({...seedClips[0],start:7.3,end:10.4})}));
- await expect.poll(()=>page.evaluate(()=>window.testPlayer?.loads.length)).toBe(1);
- expect(await page.evaluate(()=>window.testPlayer.loads[0])).toMatchObject({startSeconds:7.3,endSeconds:10.4});
- if(blocked) {
-  await expect(page.getByText('Autoplay was blocked.',{exact:false})).toBeVisible();
-  await page.getByRole('button',{name:'Play clip',exact:true}).click();
-  await expect(page.getByText('Autoplay was blocked.',{exact:false})).toHaveCount(0);
- }
+ await expect(page.getByRole('button',{name:'Play clip',exact:true})).toBeEnabled();
+ expect(await page.evaluate(()=>window.testPlayer.loads.length)).toBe(0);
+ expect(await page.evaluate(()=>window.testPlayer.state)).toBe(5);
+ expect(await page.evaluate(()=>window.testPlayer.range)).toMatchObject({startSeconds:7.3,endSeconds:10.4});
+ await page.getByRole('button',{name:'Play clip',exact:true}).click();
  await expect(page.getByRole('button',{name:'Pause',exact:true})).toBeEnabled();
  await page.evaluate(()=>window.testPlayer.current=10.5);
  await expect(page.getByLabel('Clip time')).toHaveText('0:03.1 / 0:03.1');

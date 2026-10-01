@@ -15,8 +15,7 @@ export default function ClipPlayer({ clip, onPlaybackStatus }) {
     [loop, setLoop] = useState(false),
     [muted, setMuted] = useState(false),
     [error, setError] = useState(""),
-    [attempt, setAttempt] = useState(0),
-    [autoplayBlocked, setAutoplayBlocked] = useState(false);
+    [attempt, setAttempt] = useState(0);
   const duration = Math.round((clip.end - clip.start) * 1000) / 1000;
   useEffect(() => {
     if (error) statusCallback.current?.("failed");
@@ -32,7 +31,6 @@ export default function ClipPlayer({ clip, onPlaybackStatus }) {
     setPosition(0);
     setError("");
     setMuted(false);
-    setAutoplayBlocked(false);
     finished.current = false;
     const range = {
       videoId: clip.videoId,
@@ -68,6 +66,7 @@ export default function ClipPlayer({ clip, onPlaybackStatus }) {
           videoId: clip.videoId,
           playerVars: {
             controls: 0,
+            autoplay: 0,
             disablekb: 1,
             playsinline: 1,
             rel: 0,
@@ -81,7 +80,7 @@ export default function ClipPlayer({ clip, onPlaybackStatus }) {
               clearTimeout(readyTimeout);
               setError("");
               setReady(true);
-              player.loadVideoById(range);
+              player.cueVideoById(range);
               timer = setInterval(() => {
                 if (cancelled || finished.current) return;
                 const current = player.getCurrentTime();
@@ -112,7 +111,6 @@ export default function ClipPlayer({ clip, onPlaybackStatus }) {
               setPlaying(event.data === 1);
               if (event.data === 0) finish();
               if (event.data === 1) {
-                setAutoplayBlocked(false);
                 statusCallback.current?.("passed");
                 const total = player.getDuration();
                 if (total > 0 && clip.end > total + 0.5) {
@@ -136,7 +134,7 @@ export default function ClipPlayer({ clip, onPlaybackStatus }) {
               }
             },
             onAutoplayBlocked: () => {
-              if (!cancelled) { setPlaying(false); setAutoplayBlocked(true); }
+              if (!cancelled) setPlaying(false);
             },
           },
         });
@@ -263,7 +261,6 @@ export default function ClipPlayer({ clip, onPlaybackStatus }) {
             {muted ? <VolumeX size={19} /> : <Volume2 size={19} />}
           </button>
         </div>
-        {autoplayBlocked && <p className="player-status" role="status">Autoplay was blocked. Press Play to watch this clip.</p>}
         {!ready && !error && (
           <p className="player-status" role="status">
             Loading player…
