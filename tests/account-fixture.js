@@ -14,7 +14,7 @@ export async function mockAccount(context, state, signedIn = true) {
     const body = req.postData() ? JSON.parse(req.postData()) : {};
     let data = null;
     if (path.endsWith("/hidden_example_ids")) data = state.hidden || [];
-    else if (path.endsWith("/admin_clip_catalog")) data = state.managed || [];
+    else if (path.endsWith("/shared_clip_catalog")) data = state.managed || [];
     else if (path.endsWith("/admin_delete_clip")) {
       if (state.role !== "admin") return route.fulfill({ status: 403, json: { message: "Admin access required." } });
       state.deleted = body;
@@ -33,7 +33,7 @@ export async function mockAccount(context, state, signedIn = true) {
     else if (path.endsWith("/share_clip")) {
       const row = state.clips.find((c) => c.id === body.clip_id);
       data = "a".repeat(24);
-      state.shared = { ...row.data, id: row.id };
+      state.shared = row ? { ...row.data, id: row.id } : state.managed.find((c) => c.id === body.clip_id);
     } else if (path.endsWith("/get_shared_clip")) data = state.shared;
     else if (path.endsWith("/clips")) {
       if (req.method() === "GET") data = state.clips;

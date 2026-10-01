@@ -94,7 +94,7 @@ function App() {
     } catch {}
   }, [theme]);
   const [custom, setCustom] = useState([]);
-  const [managedClips, setManagedClips] = useState([]);
+  const [communityClips, setCommunityClips] = useState([]);
   const [hiddenExamples, setHiddenExamples] = useState([]);
   const [deleting, setDeleting] = useState(false);
   const [pendingDelete, setPendingDelete] = useState(null);
@@ -134,7 +134,7 @@ function App() {
   }, []);
   useEffect(() => {
     let stale = false;
-    setCustom([]); setManagedClips([]); setFavorites([]); setRole(null);
+    setCustom([]); setCommunityClips([]); setFavorites([]); setRole(null);
     if (!session) return;
     (async () => {
       try {
@@ -145,12 +145,12 @@ function App() {
         const [clips, likes, managed] = await Promise.all([
           supabase.from("clips").select("id,data").eq("owner_id", session.user.id).order("created_at", { ascending: false }),
           supabase.from("favorites").select("clip_id").eq("owner_id", session.user.id),
-          nextRole === "admin" ? supabase.rpc("admin_clip_catalog") : Promise.resolve({ data: [], error: null }),
+          supabase.rpc("shared_clip_catalog"),
         ]);
         const records = unwrap(clips).map((r) => ({ ...cleanClipMetadata(r.data), id: r.id })).filter(validClip);
         const ids = unwrap(likes).map((r) => r.clip_id);
         const catalog = unwrap(managed).filter(validClip);
-        if (!stale) { setManagedClips(catalog); setCustom(records); setFavorites(ids); setLibraryError(""); }
+        if (!stale) { setCommunityClips(catalog); setCustom(records); setFavorites(ids); setLibraryError(""); }
       } catch (e) { if (!stale) setLibraryError("Could not load your online library. " + e.message); }
     })();
     return () => { stale = true; };
@@ -269,7 +269,7 @@ function App() {
     };
   }, []);
   const all = [...custom,
-    ...(role === "admin" ? managedClips.filter((c) => !custom.some((x) => x.id === c.id)) : []),
+    ...communityClips.filter((c) => !custom.some((x) => x.id === c.id)),
     ...[...seedClips, ...demoClips].filter((c) => !hiddenExamples.includes(c.id))];
   const norm = (s) =>
     s
@@ -315,7 +315,8 @@ function App() {
       let url = existingLink;
       if (!url) {
         const owned = custom.find((x) => x.id === c.id || x.originalId === c.id);
-        const saved = owned || await saveClip({ ...c, originalId: c.id });
+        const shared = communityClips.find((x) => x.id === c.id && x._kind === "saved");
+        const saved = owned || shared || await saveClip({ ...c, originalId: c.id });
         const id = unwrap(await supabase.rpc("share_clip", { clip_id: saved.id }));
         if (!/^[a-f0-9]{24}$/.test(id)) throw new Error("Invalid share link.");
         url = new URL("/c/" + id, location.origin).href;
@@ -343,7 +344,7 @@ function App() {
         if (!deleted.length) throw new Error("Clip not found or access was revoked.");
       }
       setCustom((p) => p.filter((x) => x.id !== c.id));
-      setManagedClips((p) => p.filter((x) => x.id !== c.id && (!legacyKey || x._legacyLink !== legacyKey)));
+      setCommunityClips((p) => p.filter((x) => x.id !== c.id && (!legacyKey || x._legacyLink !== legacyKey)));
       setFavorites((p) => p.filter((id) => id !== c.id));
       setPendingDelete(null);
       closePlayer(); setToast(example ? "Example removed from the catalog." : "Clip and its shared link deleted.");
@@ -511,7 +512,7 @@ function App() {
                 </h2>
                 <p>
                   {view === "discover"
-                    ? "Classic scenes + 10 demo cards to explore. Add your own moments."
+                    ? "A shared library of everyone’s moments. Add yours."
                     : "Little moments worth keeping."}
                 </p>
               </div>
@@ -1040,7 +1041,7 @@ function AddModal({ onClose, onSave }) {
           </p>
         )}
         <div className="form-footer">
-          <span>Your clip will be saved to your account.</span>
+          <span>Your clip will be visible to all approved members.</span>
           <button disabled={!id || submitting} className="primary" type="submit">
             <Plus size={17} /> {submitting ? "Saving…" : "Save clip"}
           </button>
