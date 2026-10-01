@@ -46,7 +46,14 @@ export async function mockAccount(context, state, signedIn = true) {
       }
     } else if (path.endsWith("/favorites")) {
       if (req.method() === "GET") data = state.favorites;
-      else if (req.method() === "POST") state.favorites.push(...(Array.isArray(body) ? body : [body]));
+      else if (req.method() === "POST") {
+        // Match production: favorites allows INSERT/DELETE, not UPDATE.
+        if (!req.headers().prefer?.includes("resolution=ignore-duplicates"))
+          return route.fulfill({ status: 403, json: { message: "permission denied for table favorites" } });
+        for (const row of Array.isArray(body) ? body : [body]) {
+          if (!state.favorites.some((f) => f.owner_id === row.owner_id && f.clip_id === row.clip_id)) state.favorites.push(row);
+        }
+      }
       else state.favorites = state.favorites.filter((f) => f.clip_id !== url.searchParams.get("clip_id").slice(3));
     } else if (path.endsWith("/logout")) data = {};
     else return route.fulfill({ status: 400, json: { message: "Unexpected mocked endpoint" } });

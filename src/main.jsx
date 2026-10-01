@@ -184,7 +184,7 @@ function App() {
       const oldFavorites = read("cq-favorites", [], Array.isArray);
       const rows = oldFavorites.filter((id) => typeof id === "string" && (mapping[id] || seedClips.some((c) => c.id === id)))
         .map((id) => ({ owner_id: session.user.id, clip_id: mapping[id] || id }));
-      if (rows.length) unwrap(await supabase.from("favorites").upsert(rows));
+      if (rows.length) unwrap(await supabase.from("favorites").upsert(rows, { ignoreDuplicates: true }));
       setLegacy([]);
       // Keep the original browser data as a recovery copy.
       setLibraryAttempt((n) => n + 1);
@@ -277,14 +277,23 @@ function App() {
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "")
       .replace(/ł/g, "l");
-  const filtered = all.filter(
+  const matchingClips = all.filter(
     (c) =>
       (view !== "favorites" || favorites.includes(c.id)) &&
       (view !== "mine" || custom.some((x) => x.id === c.id)) &&
-      (category === "All" || categoryLabel(c.category) === category) &&
       norm(
         [c.title, c.quote, c.source, c.speaker, ...c.tags].join(" "),
       ).includes(norm(query)),
+  );
+  const availableCategories = categories.filter((c) =>
+    c === "All" || matchingClips.some((clip) => categoryLabel(clip.category) === c),
+  );
+  const activeCategory = availableCategories.includes(category) ? category : "All";
+  useEffect(() => {
+    if (category !== activeCategory) setCategory(activeCategory);
+  }, [category, activeCategory]);
+  const filtered = matchingClips.filter((c) =>
+    activeCategory === "All" || categoryLabel(c.category) === activeCategory,
   );
   if (sort === "az")
     filtered.sort((a, b) =>
@@ -299,7 +308,7 @@ function App() {
         unwrap(await supabase.from("favorites").delete().eq("owner_id", session.user.id).eq("clip_id", id));
         setFavorites((p) => p.filter((x) => x !== id));
       } else {
-        unwrap(await supabase.from("favorites").upsert({ owner_id: session.user.id, clip_id: id }));
+        unwrap(await supabase.from("favorites").upsert({ owner_id: session.user.id, clip_id: id }, { ignoreDuplicates: true }));
         setFavorites((p) => [...new Set([...p, id])]);
       }
     } catch (e) { setToast("Could not save favorite. " + e.message); }
@@ -546,10 +555,10 @@ function App() {
               </div>
               <div className="filter-sort-row">
                 <div className="filters">
-                  {categories.map((c) => (
+                  {availableCategories.map((c) => (
                     <button
                       key={c}
-                      className={category === c ? "chip selected" : "chip"}
+                      className={activeCategory === c ? "chip selected" : "chip"}
                       onClick={() => setCategory(c)}
                     >
                       {c}
