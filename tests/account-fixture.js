@@ -15,6 +15,13 @@ export async function mockAccount(context, state, signedIn = true) {
     let data = null;
     if (path.endsWith("/hidden_example_ids")) data = state.hidden || [];
     else if (path.endsWith("/shared_clip_catalog")) data = state.managed || [];
+    else if (path.endsWith("/admin_update_legacy_clip")) {
+      if (state.role !== "admin") return route.fulfill({ status: 403, json: { message: "Admin access required." } });
+      const clip = state.managed?.find((c) => c._legacyLink === body.clip_key);
+      if (!clip) return route.fulfill({ status: 404, json: { message: "Clip no longer exists." } });
+      Object.assign(clip, body.clip_data, { id: `legacy:${body.clip_key}` });
+      state.shared = { ...clip };
+    }
     else if (path.endsWith("/admin_delete_clip")) {
       if (state.role !== "admin") return route.fulfill({ status: 403, json: { message: "Admin access required." } });
       state.deleted = body;
@@ -40,6 +47,16 @@ export async function mockAccount(context, state, signedIn = true) {
       else if (req.method() === "POST") {
         if (state.failSave) return route.fulfill({ status: 503, json: { message: "Storage unavailable" } });
         state.clips.push(body);
+      } else if (req.method() === "PATCH") {
+        if (state.failSave) return route.fulfill({ status: 503, json: { message: "Storage unavailable" } });
+        const id = url.searchParams.get("id").slice(3);
+        const row = state.clips.find((c) => c.id === id);
+        const managed = state.managed?.find((c) => c.id === id);
+        if (!row && !(state.role === "admin" && managed)) return route.fulfill({ status: 403, json: { message: "Access denied" } });
+        if (row) row.data = body.data;
+        if (managed) Object.assign(managed, body.data);
+        if (state.shared?.id === id) state.shared = body.data;
+        data = { id };
       } else if (req.method() === "DELETE") {
         data = state.clips.filter((c) => c.id === url.searchParams.get("id").slice(3)).map((c) => ({id:c.id}));
         state.clips = state.clips.filter((c) => c.id !== url.searchParams.get("id").slice(3)); state.shared = null;

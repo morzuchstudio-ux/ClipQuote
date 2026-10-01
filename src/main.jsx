@@ -15,6 +15,7 @@ import {
   Quote,
   Share2,
   Trash2,
+  Pencil,
   Sun,
   Moon,
 } from "lucide-react";
@@ -33,7 +34,7 @@ import {
 import "./style.css";
 import ClipPlayer from "./ClipPlayer";
 import ClipEditor from "./ClipEditor";
-import { supabase, unwrap, saveOnline } from "./account";
+import { supabase, unwrap, saveOnline, updateOnline } from "./account";
 import AccountPanel from "./AccountPanel";
 import { importBrowserLibrary } from "./browser-import";
 const browserImportError = importBrowserLibrary();
@@ -98,6 +99,7 @@ function App() {
   const [hiddenExamples, setHiddenExamples] = useState([]);
   const [deleting, setDeleting] = useState(false);
   const [pendingDelete, setPendingDelete] = useState(null);
+  const [editing, setEditing] = useState(null);
   const [deleteError, setDeleteError] = useState("");
   useEffect(() => {
     let cancelled = false;
@@ -377,6 +379,11 @@ function App() {
       setRoute("/");
     }
   }
+  const editableClip = active && (custom.find((c) => c.id === active.id) ||
+    (role === "admin" && (communityClips.find((c) => c.id === active.id) ||
+      (route.startsWith("/c/") && /^[\w-]{16}$/.test(route.slice(3))
+        ? { ...active, _legacyLink: route.slice(3) }
+        : /^[a-f0-9-]{36}$/i.test(active.id) ? active : null))));
   return (
     <>
       <main>
@@ -704,6 +711,23 @@ function App() {
           }}
         />
       )}
+      {editing && (
+        <AddModal
+          clip={editing}
+          onClose={() => setEditing(null)}
+          onSave={async (changes) => {
+            if (!requireAccount()) throw new Error("Sign in with an approved account first.");
+            const ownerId = session.user.id;
+            const saved = await updateOnline(editing, changes);
+            if (currentUser.current !== ownerId) throw new Error("Account changed. Reopen the library to see your changes.");
+            setCustom((items) => items.map((c) => c.id === editing.id ? saved : c));
+            setCommunityClips((items) => items.map((c) => c.id === editing.id || (editing._legacyLink && c._legacyLink === editing._legacyLink) ? { ...saved, id: c.id } : c));
+            setActive(saved);
+            setEditing(null);
+            setToast("Changes saved. Existing share links stay the same.");
+          }}
+        />
+      )}
       {linkState && (
         <Modal label="Shared clip" onClose={closePlayer}>
           <h2>{linkState.loading ? "Opening clip…" : "Link unavailable"}</h2>
@@ -720,7 +744,7 @@ function App() {
           )}
         </Modal>
       )}
-      {active && (
+      {active && !editing && (
         <Modal label="Clip player" wide onClose={closePlayer}>
           <ClipPlayer key={active.id} clip={active} />
           <div className="player-info">
@@ -760,6 +784,11 @@ function App() {
                   }}
                 >
                   Save clip
+                </button>
+              )}
+              {editableClip && (
+                <button className="secondary" onClick={() => setEditing(editableClip)}>
+                  <Pencil size={16} /> Edit clip
                 </button>
               )}
               {(role === "admin" || custom.some((c) => c.id === active.id)) && (
@@ -826,8 +855,8 @@ function App() {
     </>
   );
 }
-function AddModal({ onClose, onSave }) {
-  const [step, setStep] = useState(1);
+function AddModal({ onClose, onSave, clip = null }) {
+  const [step, setStep] = useState(clip ? 2 : 1);
   const stepHeading = useRef(null);
   useEffect(() => {
     if (step === 2) {
@@ -835,14 +864,14 @@ function AddModal({ onClose, onSave }) {
       stepHeading.current?.closest("dialog")?.scrollTo(0, 0);
     }
   }, [step]);
-  const [url, setUrl] = useState(""),
-    [title, setTitle] = useState(""),
-    [start, setStart] = useState(""),
-    [end, setEnd] = useState(""),
-    [source, setSource] = useState(""),
-    [speaker, setSpeaker] = useState(""),
-    [category, setCategory] = useState(categories[1]),
-    [tags, setTags] = useState(""),
+  const [url, setUrl] = useState(clip ? `https://www.youtube.com/watch?v=${clip.videoId}` : ""),
+    [title, setTitle] = useState(clip?.title || clip?.quote || ""),
+    [start, setStart] = useState(clip ? time(clip.start) : ""),
+    [end, setEnd] = useState(clip ? time(clip.end) : ""),
+    [source, setSource] = useState(clip?.source || ""),
+    [speaker, setSpeaker] = useState(clip?.speaker || ""),
+    [category, setCategory] = useState(clip ? categoryLabel(clip.category) : categories[1]),
+    [tags, setTags] = useState(clip?.tags.join(", ") || ""),
     [error, setError] = useState(""),
     [submitting, setSubmitting] = useState(false),
     [videoDuration, setVideoDuration] = useState(0);
@@ -868,7 +897,7 @@ function AddModal({ onClose, onSave }) {
       title: title.trim(),
       start: a,
       end: b,
-      quote: "",
+      quote: clip?.quote || "",
       source: source.trim(),
       speaker: speaker.trim(),
       category,
@@ -876,14 +905,14 @@ function AddModal({ onClose, onSave }) {
         .split(",")
         .map((t) => t.trim())
         .filter(Boolean),
-      color: "#707070",
+      color: clip?.color || "#707070",
     }); } catch (e) { setError("Could not save online. " + e.message); }
     finally { setSubmitting(false); }
   }
   return (
-    <Modal label="Add clip" onClose={onClose} className={step === 2 ? "add-clip-modal editing" : "add-clip-modal"}>
+    <Modal label={clip ? "Edit clip" : "Add clip"} onClose={() => { if (!submitting) onClose(); }} className={step === 2 ? "add-clip-modal editing" : "add-clip-modal"}>
       <h2>
-        Add a new clip<span className="accent">.</span>
+        {clip ? "Edit your clip" : "Add a new clip"}<span className="accent">.</span>
       </h2>
       {step === 1 && <p className="form-intro">Start with the YouTube video you want to clip.</p>}
       <form onSubmit={submit}>
@@ -925,8 +954,8 @@ function AddModal({ onClose, onSave }) {
         </div>
         </> : <>
         <div className="add-step-heading">
-          <span className="step-label" ref={stepHeading} tabIndex={-1}>Step 2 of 2 · Create your clip</span>
-          <button type="button" className="change-link" onClick={() => { setStep(1); setError(""); }}>Change link</button>
+          <span className="step-label" ref={stepHeading} tabIndex={-1}>{clip ? "Update your clip" : "Step 2 of 2 · Create your clip"}</span>
+          <button type="button" disabled={submitting} className="change-link" onClick={() => { setStep(1); setError(""); }}>Change link</button>
         </div>
         <ClipEditor key={id || 'no-video'} videoId={id} start={start} end={end}
           onDuration={setVideoDuration}
@@ -1003,8 +1032,9 @@ function AddModal({ onClose, onSave }) {
           </p>
         )}
         <div className="form-footer">
+          {clip && <button type="button" className="secondary" disabled={submitting} onClick={onClose}>Cancel</button>}
           <button disabled={!id || submitting} className="primary" type="submit">
-            <Plus size={17} /> {submitting ? "Saving…" : "Save clip"}
+            {clip ? <Check size={17} /> : <Plus size={17} />} {submitting ? "Saving…" : clip ? "Save changes" : "Save clip"}
           </button>
         </div>
         </>}

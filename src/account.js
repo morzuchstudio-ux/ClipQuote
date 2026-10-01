@@ -16,3 +16,13 @@ export async function saveOnline(clip, userId) {
   unwrap(await supabase.from("clips").insert({ id, owner_id: userId, data: clean }));
   return clean;
 }
+export async function updateOnline(original, changes) {
+  const data = { ...cleanClipMetadata(original), ...cleanClipMetadata(changes), id: original.id };
+  if (original._legacyLink) {
+    unwrap(await supabase.rpc("admin_update_legacy_clip", { clip_key: original._legacyLink, clip_data: data }));
+  } else {
+    // RLS allows only the owner or an approved admin. Keep the row and shared link IDs.
+    unwrap(await supabase.from("clips").update({ data }).eq("id", original.id).select("id").single());
+  }
+  return { ...original, ...data };
+}
