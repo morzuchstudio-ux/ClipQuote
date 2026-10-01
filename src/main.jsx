@@ -748,31 +748,17 @@ function App() {
         <Modal label="Clip player" wide onClose={closePlayer}>
           <ClipPlayer key={active.id} clip={active} />
           <div className="player-info">
-            <span className="eyebrow">
-              {active._kind === "legacy" ? "Migrated clip" : active.source || "YouTube"} · {time(active.start)}–
-              {time(active.end)}
-            </span>
-            <h2>{active.title || `“${active.quote}”`}</h2>
-            {active.title && active.quote && <p>“{active.quote}”</p>}
-            <p>
-              {[active.speaker, categoryLabel(active.category)]
-                .filter(Boolean)
-                .join(" · ")}
-            </p>
-            <div className="player-actions">
+            <div className="player-title-row">
+              <h2>{active.title || `“${active.quote}”`}</h2>
+              <span className="tag player-category">{categoryLabel(active.category)}</span>
+            </div>
+            <div className="player-actions player-clip-actions">
               <button
                 className="primary"
                 disabled={sharing}
                 onClick={() => share(active)}
               >
                 <Share2 size={16} /> {sharing ? "Creating link…" : "Copy link"}
-              </button>
-              <button className="secondary" onClick={() => favorite(active.id)}>
-                <Heart
-                  size={16}
-                  fill={favorites.includes(active.id) ? "currentColor" : "none"}
-                />{" "}
-                {favorites.includes(active.id) ? "Saved" : "Favorites"}
               </button>
               {!all.some((c) => c.id === active.id) && (
                 <button
@@ -804,17 +790,15 @@ function App() {
                   <Trash2 size={18} />
                 </button>
               )}
-            </div>
-            <p className="player-hint">
-              Video unavailable? The uploader may have disabled embedding.{" "}
-              <a
-                href={`https://www.youtube.com/watch?v=${active.videoId}&t=${Math.floor(active.start)}s`}
-                target="_blank"
-                rel="noreferrer"
+              <button
+                className={`icon-button player-favorite${favorites.includes(active.id) ? " favorited" : ""}`}
+                aria-label={favorites.includes(active.id) ? "Remove from favorites" : "Add to favorites"}
+                aria-pressed={favorites.includes(active.id)}
+                onClick={() => favorite(active.id)}
               >
-                Open on YouTube ↗
-              </a>
-            </p>
+                <Heart size={23} fill={favorites.includes(active.id) ? "currentColor" : "none"} />
+              </button>
+            </div>
           </div>
         </Modal>
       )}
