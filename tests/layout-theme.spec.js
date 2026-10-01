@@ -7,6 +7,8 @@ for(const width of [1440,390]){
   await expect(page.locator('html')).toHaveAttribute('lang','en');
   await expect(page.locator('header').getByRole('button',{name:'Add clip',exact:true})).toHaveCount(0);
   const hero=await page.locator('.hero').boundingBox(),add=await page.locator('.library-actions .primary').boundingBox();expect(add.y).toBeGreaterThan(hero.y+hero.height);
+  const search=await page.locator('.search-box').boundingBox();expect(Math.round(add.y)).toBe(Math.round(search.y));expect(add.x).toBeGreaterThan(search.x+search.width);
+  await expect(page.locator('.section-heading')).toHaveCount(0);
   await page.evaluate(()=>window.scrollTo(0,850));
   const sticky=await page.locator('.library-search').boundingBox();expect(Math.round(sticky.y)).toBe(width===390?112:0);
   expect((await page.locator('.hero').boundingBox()).y+hero.height).toBeLessThan(0);

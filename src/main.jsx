@@ -509,29 +509,8 @@ function App() {
             </section>
           )}
           <section className="library">
-            <div className="section-heading">
-              <div>
-                <h2>
-                  {view === "discover"
-                    ? "For every occasion"
-                    : view === "favorites"
-                      ? "Favorite clips"
-                      : "My clips"}{" "}
-                  <span>{filtered.length}</span>
-                </h2>
-                <p>
-                  {view === "discover"
-                    ? "A shared library of everyone’s moments. Add yours."
-                    : "Little moments worth keeping."}
-                </p>
-              </div>
-              <div className="library-actions">
-                <button className="primary" onClick={openAdd}>
-                  <Plus size={17} /> Add clip
-                </button>
-              </div>
-            </div>
             <div className="library-search" ref={librarySearchRef}>
+              <div className="library-search-row">
               <div className="search-box">
                 <Search size={21} />
                 <input
@@ -552,6 +531,12 @@ function App() {
                 ) : (
                   <kbd>⌘ K</kbd>
                 )}
+              </div>
+                <div className="library-actions">
+                  <button className="primary" onClick={openAdd}>
+                    <Plus size={20} /> Add clip
+                  </button>
+                </div>
               </div>
               <div className="filter-sort-row">
                 <div className="filters">
