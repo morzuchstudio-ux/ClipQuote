@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Play, Pause, Scissors, Flag, FlagTriangleRight } from 'lucide-react';
+import { Play, Pause, Flag, FlagTriangleRight } from 'lucide-react';
 import { youtubeAPI } from './youtube-api';
 import { seconds, time, roundTime } from './data';
 import VideoThumbnail from './VideoThumbnail';
@@ -122,10 +122,9 @@ export default function ClipEditor({ videoId, start, end, onChange, onDuration }
       </div> : null}
     </>}
     <div className="editor-playback" role="group" aria-label="Playback controls">
-      <p className="editor-section-label">Playback controls</p>
       <div className="editor-transport">
         <div className="editor-play-group">
-          <button type="button" className="primary editor-play-button" disabled={!ready || !!error}
+          <button type="button" className="secondary editor-play-button" disabled={!ready || !!error}
             aria-label={playing ? 'Pause video' : 'Play video'} onClick={() => {
               if (playing) player.current.pauseVideo();
               else { stopPreview(); player.current.seekTo(player.current.getCurrentTime(), true); player.current.playVideo(); }
@@ -146,10 +145,16 @@ export default function ClipEditor({ videoId, start, end, onChange, onDuration }
       {videoId && !ready && !error && <p className="field-hint" role="status">Loading video…</p>}
     </div>
     <fieldset disabled={!videoId} className="editor-fields">
-      <p className="editor-section-label">Cut clip</p>
+      <div className="editor-cut-heading">
+        <h3>Cut your quote</h3>
+        <button type="button" className="editor-preview-button" disabled={!ready || !!error || !valid} onClick={() => {
+          preview.current = true; setPreviewing(true); setNotice('Playing your selection…');
+          player.current.loadVideoById({videoId, startSeconds:a, endSeconds:b});
+        }}>{previewing ? 'Replay ClipQuote' : 'Preview ClipQuote'}</button>
+      </div>
       <div className="editor-endpoints">
         {['start', 'end'].map(which => <div className="editor-endpoint" key={which}>
-          <label>{which === 'start' ? 'Start' : 'End'}<input required placeholder={which === 'start' ? '0:00' : '0:10'} value={which === 'start' ? start : end} onChange={e => change(which === 'start' ? e.target.value : start, which === 'end' ? e.target.value : end)} /></label>
+          <label>{which === 'start' ? 'Start' : 'End'}<input required title="Use mm:ss or seconds, including decimals (e.g. 0:08.3)" placeholder={which === 'start' ? '0:00' : '0:10'} value={which === 'start' ? start : end} onChange={e => change(which === 'start' ? e.target.value : start, which === 'end' ? e.target.value : end)} /></label>
           <div className="editor-marker-actions">
             <button type="button" className="secondary editor-mark" disabled={!ready || !!error} onClick={() => mark(which)}>
               {which === 'start' ? <FlagTriangleRight size={15} /> : <Flag size={15} />} Set {which} here
@@ -158,14 +163,6 @@ export default function ClipEditor({ videoId, start, end, onChange, onDuration }
           </div>
         </div>)}
       </div>
-      <div className="editor-preview">
-        <button type="button" className="primary" disabled={!ready || !!error || !valid} onClick={() => {
-          preview.current = true; setPreviewing(true); setNotice('Playing your selection…');
-          player.current.loadVideoById({videoId, startSeconds:a, endSeconds:b});
-        }}><Scissors size={16} /> {previewing ? 'Replay selection' : 'Preview selection'}</button>
-        {valid && <span>{time(a)} – {time(b)} · {roundTime(b - a)}s</span>}
-      </div>
-      <p className="field-hint editor-time-hint">Times accept mm:ss or seconds, including decimals (e.g. 0:08.3).</p>
       {Number.isFinite(b) && b > max && <p className="form-error" role="alert">The end exceeds the video length ({time(max)}).</p>}
       {notice && <p className="field-hint" role="status">{notice}</p>}
     </fieldset>

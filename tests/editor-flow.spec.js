@@ -51,10 +51,10 @@ test('skip controls seek each distance, clamp at video bounds and preserve play/
  await page.evaluate(()=>window.testPlayer.current=999);
  await page.getByRole('button',{name:'Skip forward 5 seconds',exact:true}).click();
  expect(await page.evaluate(()=>window.testPlayer.current)).toBe(1000);
- await page.getByRole('button',{name:'Preview selection',exact:true}).click();
+ await page.getByRole('button',{name:'Preview ClipQuote',exact:true}).click();
  await page.getByRole('button',{name:'Skip forward 5 seconds',exact:true}).click();
  expect(await page.evaluate(()=>window.testPlayer.current)).toBe(12);
- await expect(page.getByRole('button',{name:'Preview selection',exact:true})).toBeVisible();
+ await expect(page.getByRole('button',{name:'Preview ClipQuote',exact:true})).toBeVisible();
  await expect(page.getByLabel('Start',{exact:true})).toHaveValue('7');
  await expect(page.getByLabel('End',{exact:true})).toHaveValue('10');
 });

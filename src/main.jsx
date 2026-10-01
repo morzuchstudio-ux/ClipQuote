@@ -946,6 +946,7 @@ function AddModal({ onClose, onSave }) {
         <ClipEditor key={id || 'no-video'} videoId={id} start={start} end={end}
           onDuration={setVideoDuration}
           onChange={(nextStart, nextEnd) => { setStart(nextStart); setEnd(nextEnd); setError(""); }} />
+        <div className="clip-details-row">
         <label>
           Clip title{" "}
           <input
@@ -957,7 +958,6 @@ function AddModal({ onClose, onSave }) {
             onChange={(e) => setTitle(e.target.value)}
           />
         </label>
-        <fieldset disabled={!id} className="clip-fields">
           <label>
             Reaction
             <select
@@ -969,6 +969,8 @@ function AddModal({ onClose, onSave }) {
               ))}
             </select>
           </label>
+        </div>
+        <fieldset disabled={!id} className="clip-fields">
           <details className="optional-tags">
             <summary>Additional options</summary>
             <div className="form-row">
@@ -1016,7 +1018,6 @@ function AddModal({ onClose, onSave }) {
           </p>
         )}
         <div className="form-footer">
-          <span>Your clip will be visible to all approved members.</span>
           <button disabled={!id || submitting} className="primary" type="submit">
             <Plus size={17} /> {submitting ? "Saving…" : "Save clip"}
           </button>

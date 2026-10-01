@@ -35,7 +35,7 @@ test('mark while watching, fine tune, preview stops at end, save and share decim
   await page.getByRole('button',{name:'End later by 0.1 seconds'}).click();
   await expect(page.getByLabel('Start',{exact:true})).toHaveValue('2:43.2');
   await expect(page.getByLabel('End',{exact:true})).toHaveValue('2:50.4');
-  await page.getByRole('button',{name:'Preview selection',exact:true}).click();
+  await page.getByRole('button',{name:'Preview ClipQuote',exact:true}).click();
   expect(await page.evaluate(() => window.testPlayer.loads.at(-1))).toMatchObject({startSeconds:163.2,endSeconds:170.4});
   await page.evaluate(() => window.testPlayer.current = 170.41);
   await expect(page.getByText('Preview finished.',{exact:false})).toBeVisible();
@@ -63,12 +63,12 @@ test('timing enforces video duration and changing source clears old range', asyn
   await page.getByLabel('End',{exact:true}).fill('0:20');
   await page.getByRole('button',{name:'End earlier by 0.1 seconds'}).click();
   await expect(page.getByLabel('End',{exact:true})).toHaveValue('0:20');
-  await page.getByRole('button',{name:'Preview selection',exact:true}).click();
+  await page.getByRole('button',{name:'Preview ClipQuote',exact:true}).click();
   await page.getByRole('button',{name:'End later by 0.1 seconds'}).click();
   expect(await page.evaluate(() => window.testPlayer.state)).toBe(2);
   expect(await page.evaluate(() => window.testPlayerDestroyed)).not.toBe(true);
   await page.getByLabel('End',{exact:true}).fill('1001');
-  await expect(page.getByRole('button',{name:'Preview selection',exact:true})).toBeDisabled();
+  await expect(page.getByRole('button',{name:'Preview ClipQuote',exact:true})).toBeDisabled();
   await page.getByLabel('Clip title').fill('Invalid range');
   await page.getByRole('button',{name:'Save clip',exact:true}).click();
   await expect(page.getByText('Choose a valid range:',{exact:false})).toBeVisible();

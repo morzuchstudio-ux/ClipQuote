@@ -2302,11 +2302,10 @@ header.top-header {
 .change-link { border: 0; background: transparent; color: inherit; padding: 8px 0 8px 12px; font-size: 13px; cursor: pointer; }
 .change-link:hover { color: var(--accent); }
 .form-footer.step-footer { justify-content: flex-end; }
-.clip-editor { margin: 12px 0 22px; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
-.clip-editor .editor-player { width: 100%; aspect-ratio: 16 / 9; min-height: 200px; background: #000; }
+.clip-editor { margin: 12px 0 4px; border: 0; overflow: hidden; }
+.clip-editor .editor-player { width: 100%; aspect-ratio: 16 / 9; min-height: 200px; background: #000; border-radius: 14px 14px 0 0; overflow: hidden; }
 .editor-player > div, .editor-player iframe { width: 100%; height: 100%; }
-.editor-section-label { margin: 0 0 16px; color: var(--muted); font-size: 11px; font-weight: 400; }
-.editor-playback { padding: 18px 20px; border-bottom: 1px solid var(--line); }
+.editor-playback { padding: 24px 0; border-bottom: 1px solid var(--line); }
 .editor-transport { display: grid; grid-template-columns: auto 1fr 1fr; align-items: start; gap: 26px; }
 .editor-play-group, .editor-jump-group { display: flex; flex-direction: column; align-items: center; gap: 10px; min-width: 0; }
 .editor-play-group > span, .editor-jump-group > span { font-size: 13px; }
@@ -2314,8 +2313,7 @@ header.top-header {
 .editor-jump-buttons { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 7px; width: 100%; }
 .clip-editor .secondary { padding: 10px 8px; font-size: 12px; justify-content: center; }
 .editor-jump-buttons .secondary { min-height: 44px; padding: 10px 4px; font-variant-numeric: tabular-nums; }
-.editor-fields { margin: 0; padding: 26px 22px 22px; border: 0; min-width: 0; }
-.editor-fields > .editor-section-label { margin-bottom: 22px; }
+.editor-fields { margin: 0; padding: 24px 0; border: 0; border-bottom: 1px solid var(--line); min-width: 0; }
 .editor-endpoints { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
 .editor-endpoint { min-width: 0; }
 .add-clip-modal.editing label { font-size: 13px; gap: 10px; }
@@ -2323,21 +2321,29 @@ header.top-header {
 .editor-marker-actions { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 7px; margin-top: 10px; }
 .editor-marker-actions .secondary { white-space: nowrap; }
 .editor-mark { gap: 5px; }
-.editor-preview { display: flex; flex-direction: column; align-items: center; gap: 10px; margin: 38px 0 22px; }
-.editor-preview .primary { padding: 13px 24px; }
-.editor-preview > span { font-size: 12px; font-variant-numeric: tabular-nums; color: var(--muted); }
-.editor-time-hint { text-align: center; margin-bottom: 0; }
+.editor-cut-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 24px; }
+.editor-cut-heading h3 { margin: 0; font-size: 15px; font-weight: 450; }
+.editor-preview-button { background: #292929; color: #fff; border: 1px solid #454545; border-radius: 9px; padding: 12px 14px; font-size: 14px; cursor: pointer; }
+.editor-preview-button:hover:not(:disabled) { background: #414141; }
+.editor-preview-button:disabled { opacity: .45; cursor: not-allowed; }
+.clip-details-row { display: grid; grid-template-columns: minmax(0, 3fr) minmax(150px, 1fr); gap: 22px; }
+.clip-details-row input, .clip-details-row select { height: 46px; }
+.add-clip-modal.editing .optional-tags { border: 0; padding: 16px 0; margin-top: 8px; }
+.add-clip-modal.editing .form-footer { border: 0; margin-top: 8px; padding-top: 16px; justify-content: flex-end; }
 .editor-fallback { padding: 18px; font-size: 13px; line-height: 1.6; }
 .editor-fallback img { width: 100%; max-height: 210px; object-fit: cover; border-radius: 8px; }
 .editor-fallback a { color: var(--accent); margin-right: 16px; }
 .editor-fields:disabled { opacity: .45; }
 @media (max-width: 650px) {
   .add-clip-modal.editing { padding: 20px; }
-  .editor-playback, .editor-fields { padding: 18px 14px; }
+  .editor-playback, .editor-fields { padding: 18px 0; }
   .editor-transport { grid-template-columns: 1fr; gap: 18px; }
   .editor-play-group { grid-column: 1 / -1; flex-direction: row; justify-content: flex-start; }
   .editor-endpoints { grid-template-columns: 1fr; gap: 22px; }
   .editor-marker-actions { grid-template-columns: 1fr auto auto; }
   .editor-marker-actions .secondary { padding: 11px 12px; }
-  .editor-preview { margin-top: 28px; }
+  .clip-details-row { grid-template-columns: 1fr; gap: 16px; }
+  .editor-cut-heading { gap: 10px; }
+  .editor-cut-heading h3 { font-size: 14px; }
+  .editor-preview-button { font-size: 12px; padding: 10px; }
 }
