@@ -97,6 +97,8 @@ function App() {
   const [managedClips, setManagedClips] = useState([]);
   const [hiddenExamples, setHiddenExamples] = useState([]);
   const [deleting, setDeleting] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState(null);
+  const [deleteError, setDeleteError] = useState("");
   useEffect(() => {
     let cancelled = false;
     supabase.rpc("hidden_example_ids").then(({ data, error }) => {
@@ -327,10 +329,8 @@ function App() {
     if (!requireAccount() || deleting) return;
     const example = [...seedClips, ...demoClips].some((x) => x.id === c.id);
     const legacyKey = c._legacyLink || (route.startsWith("/c/") && /^[\w-]{16}$/.test(route.slice(3)) ? route.slice(3) : null);
-    if (role === "admin" && !window.confirm(example
-      ? "Remove this example from everyone's catalog?"
-      : "Delete this clip permanently? Its shared link will stop working.")) return;
     setDeleting(true);
+    setDeleteError("");
     try {
       if (role === "admin") {
         unwrap(await supabase.rpc("admin_delete_clip", {
@@ -345,8 +345,13 @@ function App() {
       setCustom((p) => p.filter((x) => x.id !== c.id));
       setManagedClips((p) => p.filter((x) => x.id !== c.id && (!legacyKey || x._legacyLink !== legacyKey)));
       setFavorites((p) => p.filter((id) => id !== c.id));
+      setPendingDelete(null);
       closePlayer(); setToast(example ? "Example removed from the catalog." : "Clip and its shared link deleted.");
-    } catch (e) { setToast("Could not delete clip. " + e.message); }
+    } catch (e) {
+      const message = "Could not delete clip. " + e.message;
+      setDeleteError(message);
+      if (!pendingDelete) setToast(message);
+    }
     finally { setDeleting(false); }
   }
   function navigate(v) {
@@ -767,7 +772,10 @@ function App() {
                   className="icon-button"
                   aria-label="Delete clip"
                   disabled={deleting}
-                  onClick={() => deleteClip(active)}
+                  onClick={() => {
+                    if (role === "admin") { setDeleteError(""); setPendingDelete(active); }
+                    else deleteClip(active);
+                  }}
                 >
                   <Trash2 size={18} />
                 </button>
@@ -783,6 +791,22 @@ function App() {
                 Open on YouTube ↗
               </a>
             </p>
+          </div>
+        </Modal>
+      )}
+      {pendingDelete && (
+        <Modal label="Confirm deletion" onClose={() => { if (!deleting) setPendingDelete(null); }}>
+          <h2>Delete this clip?</h2>
+          <p>{pendingDelete.title || pendingDelete.quote}</p>
+          <p>{[...seedClips, ...demoClips].some((c) => c.id === pendingDelete.id)
+            ? "This example will be removed from everyone's catalog."
+            : "This permanently deletes the clip. Its shared link will stop working."}</p>
+          {deleteError && <p className="form-error" role="alert">{deleteError}</p>}
+          <div className="player-actions">
+            <button className="secondary" autoFocus disabled={deleting} onClick={() => setPendingDelete(null)}>Cancel</button>
+            <button className="primary" disabled={deleting} onClick={() => deleteClip(pendingDelete)}>
+              {deleting ? "Deleting…" : "Delete permanently"}
+            </button>
           </div>
         </Modal>
       )}
