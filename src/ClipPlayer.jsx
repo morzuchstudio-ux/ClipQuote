@@ -2,13 +2,15 @@ import { useEffect, useRef, useState } from "react";
 import { Play, Pause, RotateCcw, Repeat, Volume2, VolumeX } from "lucide-react";
 import { time, roundTime } from "./data";
 import { youtubeAPI } from "./youtube-api";
+import { unmutePlayer, playerIsSilent } from "./player-audio";
 export default function ClipPlayer({ clip, onPlaybackStatus }) {
   const statusCallback = useRef(onPlaybackStatus);
   statusCallback.current = onPlaybackStatus;
   const mount = useRef(),
     playerRef = useRef(),
     loopRef = useRef(false),
-    finished = useRef(false);
+    finished = useRef(false),
+    soundInitialized = useRef(false);
   const [ready, setReady] = useState(false),
     [playing, setPlaying] = useState(false),
     [position, setPosition] = useState(0),
@@ -32,6 +34,7 @@ export default function ClipPlayer({ clip, onPlaybackStatus }) {
     setError("");
     setMuted(false);
     finished.current = false;
+    soundInitialized.current = false;
     const range = {
       videoId: clip.videoId,
       startSeconds: clip.start,
@@ -81,8 +84,11 @@ export default function ClipPlayer({ clip, onPlaybackStatus }) {
               setError("");
               setReady(true);
               player.cueVideoById(range);
+              setMuted(playerIsSilent(player));
               timer = setInterval(() => {
-                if (cancelled || finished.current) return;
+                if (cancelled) return;
+                setMuted(playerIsSilent(player));
+                if (finished.current) return;
                 const current = player.getCurrentTime();
                 const state = player.getPlayerState();
                 if (state === 1) {
@@ -111,6 +117,11 @@ export default function ClipPlayer({ clip, onPlaybackStatus }) {
               setPlaying(event.data === 1);
               if (event.data === 0) finish();
               if (event.data === 1) {
+                // Also cover Play pressed inside the YouTube frame.
+                if (!soundInitialized.current) {
+                  unmutePlayer(player);
+                  soundInitialized.current = true;
+                }
                 statusCallback.current?.("passed");
                 const total = player.getDuration();
                 if (total > 0 && clip.end > total + 0.5) {
@@ -151,7 +162,14 @@ export default function ClipPlayer({ clip, onPlaybackStatus }) {
       player?.destroy();
     };
   }, [clip.videoId, clip.start, clip.end, attempt]);
+  function prepareSound() {
+    if (!soundInitialized.current) {
+      unmutePlayer(playerRef.current);
+      soundInitialized.current = true;
+    }
+  }
   function replay() {
+    prepareSound();
     finished.current = false;
     setPosition(0);
     playerRef.current.loadVideoById({
@@ -166,6 +184,7 @@ export default function ClipPlayer({ clip, onPlaybackStatus }) {
     } else if (finished.current || position >= duration) {
       replay();
     } else {
+      prepareSound();
       playerRef.current.playVideo();
     }
   }
@@ -253,9 +272,10 @@ export default function ClipPlayer({ clip, onPlaybackStatus }) {
             aria-label={muted ? "Unmute" : "Mute"}
             onClick={() => {
               const p = playerRef.current;
-              if (muted) p.unMute();
+              soundInitialized.current = true;
+              if (playerIsSilent(p)) unmutePlayer(p);
               else p.mute();
-              setMuted(!muted);
+              setMuted(playerIsSilent(p));
             }}
           >
             {muted ? <VolumeX size={19} /> : <Volume2 size={19} />}

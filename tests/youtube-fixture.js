@@ -6,6 +6,8 @@ export async function mockYouTube(page) {
           this.options = options;
           this.current = options.playerVars.start;
           this.state = 5;
+          this.muted = window.testInitialMuted ?? false;
+          this.volume = window.testInitialVolume ?? 100;
           this.loads = [];
           this.seeks = [];
           const iframe = document.createElement("iframe");
@@ -53,8 +55,11 @@ export async function mockYouTube(page) {
           this.current = value;
           this.seeks.push(value);
         }
-        mute() {}
-        unMute() {}
+        mute() { this.muted = true; }
+        unMute() { this.muted = false; }
+        isMuted() { return this.muted; }
+        getVolume() { return this.volume; }
+        setVolume(value) { this.volume = value; }
         destroy() {
           this.iframe.remove();
           window.testPlayerDestroyed = true;

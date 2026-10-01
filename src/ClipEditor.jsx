@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { Play, Pause, Flag, FlagTriangleRight } from 'lucide-react';
 import { youtubeAPI } from './youtube-api';
+import { unmutePlayer } from './player-audio';
 import { seconds, time, roundTime } from './data';
 import VideoThumbnail from './VideoThumbnail';
 
 export default function ClipEditor({ videoId, start, end, onChange, onDuration }) {
-  const mount = useRef(null), player = useRef(null), preview = useRef(false);
+  const mount = useRef(null), player = useRef(null), preview = useRef(false), soundInitialized = useRef(false);
   const [ready, setReady] = useState(false), [playing, setPlaying] = useState(false);
   const [duration, setDuration] = useState(0);
   const [error, setError] = useState(''), [notice, setNotice] = useState('');
@@ -19,7 +20,7 @@ export default function ClipEditor({ videoId, start, end, onChange, onDuration }
     if (!videoId) return;
     let cancelled = false, instance, timer, timeout;
     setReady(false); setError(''); setDuration(0); setPlaying(false);
-    preview.current = false; setPreviewing(false); setNotice('');
+    preview.current = false; soundInitialized.current = false; setPreviewing(false); setNotice('');
     function fail(message) {
       if (cancelled) return;
       clearTimeout(timeout); clearInterval(timer);
@@ -57,6 +58,10 @@ export default function ClipEditor({ videoId, start, end, onChange, onDuration }
           onStateChange: ({ data }) => {
             if (cancelled) return;
             setPlaying(data === 1);
+            if (data === 1 && !soundInitialized.current) {
+              unmutePlayer(instance);
+              soundInitialized.current = true;
+            }
             if (data === 0 && preview.current) {
               preview.current = false; setPreviewing(false);
               setNotice('Preview finished. Adjust the selection or save your clip.');
@@ -73,6 +78,12 @@ export default function ClipEditor({ videoId, start, end, onChange, onDuration }
       instance?.destroy(); player.current = null;
     };
   }, [videoId, attempt]);
+  function prepareSound() {
+    if (!soundInitialized.current) {
+      unmutePlayer(player.current);
+      soundInitialized.current = true;
+    }
+  }
   function stopPreview() {
     if (preview.current && player.current && ready) {
       player.current.pauseVideo();
@@ -127,7 +138,7 @@ export default function ClipEditor({ videoId, start, end, onChange, onDuration }
           <button type="button" className="secondary editor-play-button" disabled={!ready || !!error}
             aria-label={playing ? 'Pause video' : 'Play video'} onClick={() => {
               if (playing) player.current.pauseVideo();
-              else { stopPreview(); player.current.seekTo(player.current.getCurrentTime(), true); player.current.playVideo(); }
+              else { prepareSound(); stopPreview(); player.current.seekTo(player.current.getCurrentTime(), true); player.current.playVideo(); }
             }}>{playing ? <Pause size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" />}</button>
           <span>Play/Pause</span>
         </div>
@@ -148,6 +159,7 @@ export default function ClipEditor({ videoId, start, end, onChange, onDuration }
       <div className="editor-cut-heading">
         <h3>Cut your quote</h3>
         <button type="button" className="editor-preview-button" disabled={!ready || !!error || !valid} onClick={() => {
+          prepareSound();
           preview.current = true; setPreviewing(true); setNotice('Playing your selection…');
           player.current.loadVideoById({videoId, startSeconds:a, endSeconds:b});
         }}>{previewing ? 'Replay ClipQuote' : 'Preview ClipQuote'}</button>
