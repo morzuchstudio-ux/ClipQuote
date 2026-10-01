@@ -48,7 +48,6 @@ test('skip controls seek each distance, clamp at video bounds and preserve play/
  await page.getByRole('button',{name:'Skip backward 5 seconds',exact:true}).click();
  expect(await page.evaluate(()=>window.testPlayer.current)).toBe(0);
  expect(await page.evaluate(()=>window.testPlayer.state)).toBe(1);
- await expect(page.getByRole('slider',{name:'Range end'})).toHaveAttribute('max','1000');
  await page.evaluate(()=>window.testPlayer.current=999);
  await page.getByRole('button',{name:'Skip forward 5 seconds',exact:true}).click();
  expect(await page.evaluate(()=>window.testPlayer.current)).toBe(1000);

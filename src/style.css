@@ -2292,54 +2292,52 @@ header.top-header {
 .clip-card { cursor: pointer; }
 .clip-card:focus-within { border-color: var(--accent); }
 
-/* One continuous workflow: watch, mark, fine-tune, preview. */
-.clip-editor { margin: 22px 0 28px; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+/* Clip creation: playback and cutting are separate control groups. */
+.add-clip-modal.editing { max-width: 760px; padding: 28px; }
+.add-clip-modal h2 { margin-top: 0; }
+.add-clip-modal.editing h2 { margin-bottom: 26px; }
+.step-label { color: var(--muted); font-size: 12px; font-weight: 600; }
+.add-step-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.add-step-heading .step-label:focus { outline: none; }
+.change-link { border: 0; background: transparent; color: inherit; padding: 8px 0 8px 12px; font-size: 13px; cursor: pointer; }
+.change-link:hover { color: var(--accent); }
+.form-footer.step-footer { justify-content: flex-end; }
+.clip-editor { margin: 12px 0 22px; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
 .clip-editor .editor-player { width: 100%; aspect-ratio: 16 / 9; min-height: 200px; background: #000; }
-.editor-player iframe { width: 100%; height: 100%; }
-.editor-watch { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; padding: 14px 18px; border-bottom: 1px solid var(--line); }
-.editor-watch output { font-variant-numeric: tabular-nums; font-size: 13px; }
-.editor-watch > span { font-size: 12px; color: var(--muted); }
-.editor-fields { margin: 0; padding: 18px; border: 0; min-width: 0; }
-.editor-fields > .field-hint:first-child { margin: 0 0 16px; }
-.editor-endpoints { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.editor-player > div, .editor-player iframe { width: 100%; height: 100%; }
+.editor-section-label { margin: 0 0 16px; color: var(--muted); font-size: 11px; font-weight: 400; }
+.editor-playback { padding: 18px 20px; border-bottom: 1px solid var(--line); }
+.editor-transport { display: grid; grid-template-columns: auto 1fr 1fr; align-items: start; gap: 26px; }
+.editor-play-group, .editor-jump-group { display: flex; flex-direction: column; align-items: center; gap: 10px; min-width: 0; }
+.editor-play-group > span, .editor-jump-group > span { font-size: 13px; }
+.editor-play-button { width: 58px; height: 44px; padding: 0; justify-content: center; }
+.editor-jump-buttons { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 7px; width: 100%; }
+.clip-editor .secondary { padding: 10px 8px; font-size: 12px; justify-content: center; }
+.editor-jump-buttons .secondary { min-height: 44px; padding: 10px 4px; font-variant-numeric: tabular-nums; }
+.editor-fields { margin: 0; padding: 26px 22px 22px; border: 0; min-width: 0; }
+.editor-fields > .editor-section-label { margin-bottom: 22px; }
+.editor-endpoints { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
 .editor-endpoint { min-width: 0; }
-.editor-endpoint > .secondary { width: 100%; margin-top: 8px; justify-content: center; }
-.editor-nudge { display: flex; gap: 8px; margin-top: 8px; }
-.editor-nudge button { flex: 1; justify-content: center; }
-.clip-editor .secondary { padding: 9px 12px; font-size: 12px; }
-.editor-preview { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin: 18px 0 12px; }
+.add-clip-modal.editing label { font-size: 13px; gap: 10px; }
+.add-clip-modal.editing input, .add-clip-modal.editing select { padding: 13px 14px; font-size: 14px; }
+.editor-marker-actions { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 7px; margin-top: 10px; }
+.editor-marker-actions .secondary { white-space: nowrap; }
+.editor-mark { gap: 5px; }
+.editor-preview { display: flex; flex-direction: column; align-items: center; gap: 10px; margin: 38px 0 22px; }
+.editor-preview .primary { padding: 13px 24px; }
 .editor-preview > span { font-size: 12px; font-variant-numeric: tabular-nums; color: var(--muted); }
-.clip-editor .range-ticks { margin-bottom: 0; gap: 10px; }
-.clip-editor .range-ticks span:nth-child(2) { text-align: center; }
+.editor-time-hint { text-align: center; margin-bottom: 0; }
 .editor-fallback { padding: 18px; font-size: 13px; line-height: 1.6; }
 .editor-fallback img { width: 100%; max-height: 210px; object-fit: cover; border-radius: 8px; }
 .editor-fallback a { color: var(--accent); margin-right: 16px; }
 .editor-fields:disabled { opacity: .45; }
-@media (max-width: 520px) {
-  .editor-fields, .editor-watch { padding: 12px; }
-  .editor-endpoints { gap: 10px; }
-  .editor-nudge { gap: 4px; }
-  .clip-editor .secondary { padding: 9px 7px; }
-  .clip-editor .range-ticks span:nth-child(2) { max-width: 140px; }
+@media (max-width: 650px) {
+  .add-clip-modal.editing { padding: 20px; }
+  .editor-playback, .editor-fields { padding: 18px 14px; }
+  .editor-transport { grid-template-columns: 1fr; gap: 18px; }
+  .editor-play-group { grid-column: 1 / -1; flex-direction: row; justify-content: flex-start; }
+  .editor-endpoints { grid-template-columns: 1fr; gap: 22px; }
+  .editor-marker-actions { grid-template-columns: 1fr auto auto; }
+  .editor-marker-actions .secondary { padding: 11px 12px; }
+  .editor-preview { margin-top: 28px; }
 }
-
-.editor-player > div { height: 100%; }
-/* Offset the handles so a short selection remains draggable on long videos. */
-.clip-editor .dual-range { height: 70px; }
-.clip-editor .range-rail, .clip-editor .range-selection { top: 32px; }
-.modal .clip-editor .dual-range input { height: 70px; }
-.clip-editor .dual-range input::-webkit-slider-thumb { height: 22px; }
-.clip-editor .dual-range input::-moz-range-thumb { height: 18px; }
-.clip-editor .dual-range input:first-of-type::-webkit-slider-thumb { transform: translateY(-14px); }
-.clip-editor .dual-range input:last-of-type::-webkit-slider-thumb { transform: translateY(14px); }
-.clip-editor .dual-range input:first-of-type::-moz-range-thumb { transform: translateY(-14px); }
-.clip-editor .dual-range input:last-of-type::-moz-range-thumb { transform: translateY(14px); }
-.step-label { color: var(--muted); font-size: 12px; font-weight: 600; }
-.add-step-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.add-step-heading .secondary { padding: 8px 12px; font-size: 12px; }
-.form-footer.step-footer { justify-content: flex-end; }
-.editor-jumps { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 18px; }
-.editor-jumps > div > span { display: block; color: var(--muted); font-size: 11px; margin-bottom: 7px; }
-.editor-jump-buttons { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
-.editor-jump-buttons .secondary { padding: 8px 4px; justify-content: center; font-variant-numeric: tabular-nums; }
-@media (max-width: 520px) { .editor-jumps { grid-template-columns: 1fr; gap: 10px; } }

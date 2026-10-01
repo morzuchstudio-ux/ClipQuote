@@ -57,13 +57,11 @@ test('mark while watching, fine tune, preview stops at end, save and share decim
   expect(await recipient.evaluate(() => window.testPlayer.range)).toMatchObject({startSeconds:163.2,endSeconds:170.4});
   await context.close();
 });
-test('timeline uses video duration, clamps handles and changing source clears old range', async ({page}) => {
+test('timing enforces video duration and changing source clears old range', async ({page}) => {
   await openEditor(page);
-  const start = page.getByRole('slider',{name:'Range start'});
-  const end = page.getByRole('slider',{name:'Range end'});
-  await expect(end).toHaveAttribute('max','1000');
-  await end.fill('20'); await start.fill('19.9');
-  await end.fill('15');
+  await page.getByLabel('Start',{exact:true}).fill('0:19.9');
+  await page.getByLabel('End',{exact:true}).fill('0:20');
+  await page.getByRole('button',{name:'End earlier by 0.1 seconds'}).click();
   await expect(page.getByLabel('End',{exact:true})).toHaveValue('0:20');
   await page.getByRole('button',{name:'Preview selection',exact:true}).click();
   await page.getByRole('button',{name:'End later by 0.1 seconds'}).click();

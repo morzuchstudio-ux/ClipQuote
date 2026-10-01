@@ -46,7 +46,7 @@ function read(key, fallback, validate) {
     return fallback;
   }
 }
-function Modal({ children, onClose, label, wide = false }) {
+function Modal({ children, onClose, label, wide = false, className = "" }) {
   const ref = useRef();
   useEffect(() => {
     const old = document.activeElement;
@@ -56,7 +56,7 @@ function Modal({ children, onClose, label, wide = false }) {
   return (
     <dialog
       ref={ref}
-      className={wide ? "modal wide" : "modal"}
+      className={`${wide ? "modal wide" : "modal"} ${className}`}
       aria-label={label}
       onCancel={(e) => {
         e.preventDefault();
@@ -896,14 +896,11 @@ function AddModal({ onClose, onSave }) {
     finally { setSubmitting(false); }
   }
   return (
-    <Modal label="Add clip" onClose={onClose}>
-      <span className="eyebrow">YOUR SCENE. YOUR WORDS.</span>
+    <Modal label="Add clip" onClose={onClose} className={step === 2 ? "add-clip-modal editing" : "add-clip-modal"}>
       <h2>
         Add a new clip<span className="accent">.</span>
       </h2>
-      <p className="form-intro">
-        {step === 1 ? "Start with the YouTube video you want to clip." : "Pick your moment, preview it, and give it a title."}
-      </p>
+      {step === 1 && <p className="form-intro">Start with the YouTube video you want to clip.</p>}
       <form onSubmit={submit}>
         {step === 1 ? <>
         <span className="step-label">Step 1 of 2 · Video link</span>
@@ -944,7 +941,7 @@ function AddModal({ onClose, onSave }) {
         </> : <>
         <div className="add-step-heading">
           <span className="step-label" ref={stepHeading} tabIndex={-1}>Step 2 of 2 · Create your clip</span>
-          <button type="button" className="secondary" onClick={() => { setStep(1); setError(""); }}>Change link</button>
+          <button type="button" className="change-link" onClick={() => { setStep(1); setError(""); }}>Change link</button>
         </div>
         <ClipEditor key={id || 'no-video'} videoId={id} start={start} end={end}
           onDuration={setVideoDuration}

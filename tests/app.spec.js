@@ -121,7 +121,7 @@ test("mobile layout and navigation", async ({ page }) => {
   ).toBeVisible();
 });
 
-test("simplified form, dual range, optional metadata and searchable title", async ({
+test("simplified form, precise timing, optional metadata and searchable title", async ({
   page,
 }) => {
   await page.getByRole("button", { name: "Add clip", exact: true }).click();
@@ -140,11 +140,11 @@ test("simplified form, dual range, optional metadata and searchable title", asyn
     form.getByRole("button", { name: "Transkrybuj", exact: true }),
   ).toHaveCount(0);
   await form.getByLabel("Clip title").fill("Kolejny deadline");
-  await form.getByRole("slider", { name: "Range end" }).fill("65");
-  await form.getByRole("slider", { name: "Range start" }).fill("43");
+  await form.getByLabel("End", { exact: true }).fill("1:05");
+  await form.getByLabel("Start", { exact: true }).fill("0:43");
   await expect(form.getByLabel("Start", { exact: true })).toHaveValue("0:43");
   await expect(form.getByLabel("End", { exact: true })).toHaveValue("1:05");
-  await form.getByRole("slider", { name: "Range end" }).press("ArrowRight");
+  await form.getByRole("button", { name: "End later by 0.1 seconds" }).click();
   await expect(form.getByLabel("End", { exact: true })).toHaveValue("1:05.1");
 
   await expect(form.getByLabel("Movie, series, or channel")).not.toBeVisible();
