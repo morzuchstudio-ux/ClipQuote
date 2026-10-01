@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer">
+<title>ClipQuote has moved</title>
+<style>body{background:#121212;color:#eee;font:18px system-ui;max-width:600px;margin:12vh auto;padding:24px;line-height:1.6}button,a{display:inline-block;background:#df001b;color:white;border:0;border-radius:8px;padding:14px 20px;font:inherit;text-decoration:none;cursor:pointer;margin:8px 8px 8px 0}small{display:block;color:#aaa}</style>
+</head><body><h1>ClipQuote has moved.</h1><p id="message">Your shared links and online account are ready on our new site.</p><button id="transfer" hidden>Bring my browser clips</button><a id="continue">Open ClipQuote</a><small>Your original browser library will stay here as a backup.</small>
+<script>
+const destination = "https://clipquote.vercel.app";
+document.getElementById("continue").href = destination;
+if (location.hash || location.pathname !== "/") location.replace(destination + location.pathname + location.search + location.hash);
+let clips=[], favorites=[];
+try { clips=JSON.parse(localStorage.getItem("cq-clips")||"[]"); favorites=JSON.parse(localStorage.getItem("cq-favorites")||"[]"); } catch {}
+if (Array.isArray(clips) && clips.length) {
+ document.getElementById("message").textContent = "You have " + clips.length + " clips saved in this browser. Bring them to the new site, then sign in and choose Import to my account.";
+ const button=document.getElementById("transfer");button.hidden=false;
+ button.onclick=()=>location.assign(destination+"/#"+new URLSearchParams({"browser-import":JSON.stringify({clips,favorites})}));
+}
+</script></body></html>

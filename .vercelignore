@@ -1,0 +1,12 @@
+.env*
+!.env.example
+.netlify
+supabase
+tests
+test-results
+playwright-report
+node_modules
+dist
+.git
+netlify
+migration
