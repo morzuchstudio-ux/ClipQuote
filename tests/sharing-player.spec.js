@@ -79,21 +79,3 @@ test("failed embed hides controls and offers timestamped fallback", async ({ pag
   await page.getByRole("button", { name: "Try again", exact: true }).click();
   await expect(page.getByRole("button", { name: "Play clip", exact: true })).toBeEnabled();
 });
-
-test("creation preview verifies actual playback and resets on range change", async ({ page }) => {
-  await mockYouTube(page);
-  await page.goto("/");
-  await page.getByRole("button", { name: "Add clip", exact: true }).click();
-  await page.getByLabel("YouTube link", { exact: true }).fill("https://www.youtube.com/watch?v=1YZEE9-2BWE");
-  await page.getByLabel("Start", { exact: true }).fill("7");
-  await page.getByLabel("End", { exact: true }).fill("10");
-  await page.getByRole("button", { name: "Check playback" }).click();
-  await expect(page.getByText("Press Play clip to test playback.", { exact: false })).toBeVisible();
-  await page.getByRole("button", { name: "Play clip", exact: true }).click();
-  await expect(page.getByText("Playback works here right now.", { exact: false })).toBeVisible();
-  await page.evaluate(() => window.testPlayer.options.events.onError({ data: 150 }));
-  await expect(page.getByText("Playback check failed.", { exact: false })).toBeVisible();
-  await page.getByLabel("End", { exact: true }).fill("11");
-  await expect(page.locator(".playback-fallback")).toHaveCount(0);
-  await expect(page.getByRole("heading", { name: "Add a new clip." })).toBeVisible();
-});

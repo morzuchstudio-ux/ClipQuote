@@ -1,41 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Play, Pause, RotateCcw, Repeat, Volume2, VolumeX } from "lucide-react";
-import { time } from "./data";
-let apiPromise;
-function youtubeAPI() {
-  if (window.YT?.Player) return Promise.resolve(window.YT);
-  if (!apiPromise)
-    apiPromise = new Promise((resolve, reject) => {
-      const previous = window.onYouTubeIframeAPIReady;
-      const timer = setTimeout(() => {
-        apiPromise = null;
-        reject(
-          new Error(
-            "YouTube is not responding. Retry or open the original video below.",
-          ),
-        );
-      }, 15000);
-      window.onYouTubeIframeAPIReady = () => {
-        clearTimeout(timer);
-        previous?.();
-        resolve(window.YT);
-      };
-      let script = document.querySelector("script[data-youtube-api]");
-      if (!script) {
-        script = document.createElement("script");
-        script.src = "https://www.youtube.com/iframe_api";
-        script.dataset.youtubeApi = "true";
-        document.head.append(script);
-      }
-      script.onerror = () => {
-        clearTimeout(timer);
-        script.remove();
-        apiPromise = null;
-        reject(new Error("Could not load YouTube. Check your connection."));
-      };
-    });
-  return apiPromise;
-}
+import { time, roundTime } from "./data";
+import { youtubeAPI } from "./youtube-api";
 export default function ClipPlayer({ clip, onPlaybackStatus }) {
   const statusCallback = useRef(onPlaybackStatus);
   statusCallback.current = onPlaybackStatus;
@@ -50,7 +16,7 @@ export default function ClipPlayer({ clip, onPlaybackStatus }) {
     [muted, setMuted] = useState(false),
     [error, setError] = useState(""),
     [attempt, setAttempt] = useState(0);
-  const duration = clip.end - clip.start;
+  const duration = Math.round((clip.end - clip.start) * 1000) / 1000;
   useEffect(() => {
     if (error) statusCallback.current?.("failed");
   }, [error]);
@@ -104,8 +70,8 @@ export default function ClipPlayer({ clip, onPlaybackStatus }) {
             playsinline: 1,
             rel: 0,
             origin: location.origin,
-            start: clip.start,
-            end: clip.end,
+            start: Math.floor(clip.start),
+            end: Math.ceil(clip.end),
           },
           events: {
             onReady: () => {
@@ -211,8 +177,8 @@ export default function ClipPlayer({ clip, onPlaybackStatus }) {
         <div className="playback-fallback" role="alert">
           <h3>Watch this one on YouTube</h3>
           <p>{error}</p>
-          <a className="primary" href={`https://www.youtube.com/watch?v=${clip.videoId}&t=${clip.start}s`} target="_blank" rel="noopener noreferrer">Watch on YouTube ↗</a>
-          <p className="field-hint">Opens at {time(clip.start)}. The selected end time cannot be enforced on YouTube. You may need to sign in there.</p>
+          <a className="primary" href={`https://www.youtube.com/watch?v=${clip.videoId}&t=${Math.floor(clip.start)}s`} target="_blank" rel="noopener noreferrer">Watch on YouTube ↗</a>
+          <p className="field-hint">Opens near {time(Math.floor(clip.start))}. The selected end time cannot be enforced on YouTube. You may need to sign in there.</p>
           <button type="button" className="secondary" onClick={() => setAttempt((n) => n + 1)}>Try again</button>
         </div>
       ) : <div className="clip-controls">
@@ -229,7 +195,7 @@ export default function ClipPlayer({ clip, onPlaybackStatus }) {
           value={position}
           disabled={!ready || !!error}
           aria-label="Clip position"
-          aria-valuetext={`${time(Math.floor(position))} of ${time(duration)}`}
+          aria-valuetext={`${time(roundTime(position))} of ${time(duration)}`}
           style={{ "--progress": `${(position / duration) * 100}%` }}
           onChange={(e) => {
             const next = Number(e.target.value);
@@ -265,7 +231,7 @@ export default function ClipPlayer({ clip, onPlaybackStatus }) {
             <RotateCcw size={18} />
           </button>
           <output className="clip-clock" aria-label="Clip time">
-            {time(Math.floor(position))} <span>/ {time(duration)}</span>
+            {time(roundTime(position))} <span>/ {time(duration)}</span>
           </output>
           <button
             type="button"

@@ -15,7 +15,6 @@ import {
   Quote,
   Share2,
   Trash2,
-  Scissors,
   Sun,
   Moon,
 } from "lucide-react";
@@ -33,6 +32,7 @@ import {
 } from "./data";
 import "./style.css";
 import ClipPlayer from "./ClipPlayer";
+import ClipEditor from "./ClipEditor";
 import { supabase, unwrap, saveOnline } from "./account";
 import AccountPanel from "./AccountPanel";
 import { importBrowserLibrary } from "./browser-import";
@@ -794,7 +794,7 @@ function App() {
             <p className="player-hint">
               Video unavailable? The uploader may have disabled embedding.{" "}
               <a
-                href={`https://www.youtube.com/watch?v=${active.videoId}&t=${active.start}s`}
+                href={`https://www.youtube.com/watch?v=${active.videoId}&t=${Math.floor(active.start)}s`}
                 target="_blank"
                 rel="noreferrer"
               >
@@ -851,21 +851,19 @@ function AddModal({ onClose, onSave }) {
     [category, setCategory] = useState(categories[1]),
     [tags, setTags] = useState(""),
     [error, setError] = useState(""),
-    [editor, setEditor] = useState(false),
     [submitting, setSubmitting] = useState(false),
-    [checking, setChecking] = useState(false),
-    [playbackStatus, setPlaybackStatus] = useState("pending");
+    [videoDuration, setVideoDuration] = useState(0);
   const id = youtubeId(url),
     a = seconds(start),
     b = seconds(end);
   const rangeValid =
-    Number.isInteger(a) && Number.isInteger(b) && a >= 0 && b > a && b <= 86400;
+    Number.isFinite(a) && Number.isFinite(b) && a >= 0 && b > a && b <= 86400 && (!videoDuration || b <= videoDuration);
   async function submit(e) {
     e.preventDefault();
     if (!id) return setError("Enter a valid YouTube video link.");
     if (!rangeValid)
       return setError(
-        "Choose a valid range: the end must be after the start (max. 24 hours).",
+        "Choose a valid range: the end must be after the start and within the video (max. 24 hours).",
       );
     if (!title.trim()) return setError("Enter a clip title.");
     if (submitting) return;
@@ -909,8 +907,7 @@ function AddModal({ onClose, onSave }) {
             onChange={(e) => {
               const next = e.target.value;
               if (youtubeId(next) !== id) {
-                setChecking(false);
-                setPlaybackStatus("pending");
+                setVideoDuration(0);
                 setStart("");
                 setEnd("");
               }
@@ -930,12 +927,9 @@ function AddModal({ onClose, onSave }) {
             "Paste a video link to unlock the other fields."
           )}
         </small>
-        {id && (
-          <figure className="video-link-preview">
-            <VideoThumbnail key={id} videoId={id} alt="YouTube video thumbnail" />
-            <figcaption>Video thumbnail from YouTube</figcaption>
-          </figure>
-        )}
+        <ClipEditor key={id || 'no-video'} videoId={id} start={start} end={end}
+          onDuration={setVideoDuration}
+          onChange={(nextStart, nextEnd) => { setStart(nextStart); setEnd(nextEnd); setError(""); }} />
         <label>
           Clip title{" "}
           <input
@@ -948,50 +942,6 @@ function AddModal({ onClose, onSave }) {
           />
         </label>
         <fieldset disabled={!id} className="clip-fields">
-          <div className="form-row">
-            <label>
-              Start
-              <input
-                required
-                value={start}
-                onChange={(e) => { setStart(e.target.value); setChecking(false); setPlaybackStatus("pending"); }}
-                placeholder="0:00"
-              />
-            </label>
-            <label>
-              End
-              <input
-                required
-                value={end}
-                onChange={(e) => { setEnd(e.target.value); setChecking(false); setPlaybackStatus("pending"); }}
-                placeholder="0:10"
-              />
-            </label>
-            <button
-              type="button"
-              className="secondary preview-button"
-              onClick={() => setEditor(true)}
-            >
-              <Scissors size={15} /> Choose range
-            </button>
-          </div>
-          <small className="field-hint">
-            Enter mm:ss or seconds, or drag the handles on the timeline.
-          </small>
-          <section className="playback-check" aria-label="Playback check">
-            <button type="button" className="secondary" disabled={!rangeValid} onClick={() => setChecking(true)}>
-              <Play size={15} /> Check playback
-            </button>
-            <p className="field-hint">Preview before saving to check whether this video plays in ClipQuote.</p>
-            {checking && rangeValid && <>
-              <ClipPlayer clip={{ videoId: id, start: a, end: b }} onPlaybackStatus={setPlaybackStatus} />
-              <p role="status" className="field-hint">
-                {playbackStatus === "passed" ? "Playback works here right now. Availability can change later." :
-                 playbackStatus === "failed" ? "Playback check failed. Choose another source, or save this clip with the YouTube fallback." :
-                 "Press Play clip to test playback. Loading the player alone does not confirm availability."}
-              </p>
-            </>}
-          </section>
           <label>
             Reaction
             <select
@@ -1056,135 +1006,6 @@ function AddModal({ onClose, onSave }) {
           </button>
         </div>
       </form>
-      {editor && (
-        <RangeModal
-          start={a}
-          end={b}
-          onClose={() => setEditor(false)}
-          onApply={(x, y) => {
-            setChecking(false);
-            setPlaybackStatus("pending");
-            setStart(time(x));
-            setEnd(time(y));
-            setError("");
-            setEditor(false);
-          }}
-        />
-      )}
-    </Modal>
-  );
-}
-function RangeModal({ start, end, onClose, onApply }) {
-  const initialStart =
-    Number.isInteger(start) && start >= 0 && start < 86400 ? start : 0;
-  const initialEnd =
-    Number.isInteger(end) && end > initialStart && end <= 86400
-      ? end
-      : Math.min(initialStart + 10, 86400);
-  const [from, setFrom] = useState(initialStart),
-    [to, setTo] = useState(initialEnd),
-    [extent, setExtent] = useState(
-      String(Math.min(86400, Math.max(300, initialEnd))),
-    ),
-    [rangeError, setRangeError] = useState("");
-  const max = seconds(extent),
-    validExtent = Number.isInteger(max) && max >= to && max <= 86400;
-  const scale = validExtent ? max : Math.max(300, to);
-  return (
-    <Modal label="Choose time range" onClose={onClose}>
-      <span className="eyebrow">CATCH THAT MOMENT</span>
-      <h2>
-        Choose range<span className="accent">.</span>
-      </h2>
-      <p className="form-intro">
-        Drag the start and end. Use the arrow keys to adjust by one second.
-      </p>
-      <div className="range-readout">
-        <div>
-          <span>Start</span>
-          <strong>{time(from)}</strong>
-        </div>
-        <div className="range-length">
-          <Scissors size={18} />
-          {to - from} s
-        </div>
-        <div>
-          <span>End</span>
-          <strong>{time(to)}</strong>
-        </div>
-      </div>
-      <div
-        className="dual-range"
-        style={{
-          "--from": `${(from / scale) * 100}%`,
-          "--to": `${(to / scale) * 100}%`,
-        }}
-      >
-        <div className="range-rail" />
-        <div className="range-selection" />
-        <input
-          type="range"
-          aria-label="Range start"
-          aria-valuetext={time(from)}
-          min="0"
-          max={scale}
-          step="1"
-          value={from}
-          onChange={(e) => setFrom(Math.min(Number(e.target.value), to - 1))}
-        />
-        <input
-          type="range"
-          aria-label="Range end"
-          aria-valuetext={time(to)}
-          min="0"
-          max={scale}
-          step="1"
-          value={to}
-          onChange={(e) => setTo(Math.max(Number(e.target.value), from + 1))}
-        />
-      </div>
-      <div className="range-ticks">
-        <span>0:00</span>
-        <span>{time(Math.floor(scale / 2))}</span>
-        <span>{time(scale)}</span>
-      </div>
-      <label className="scale-label">
-        Timeline scale
-        <input
-          value={extent}
-          onChange={(e) => {
-            setExtent(e.target.value);
-            setRangeError("");
-          }}
-          placeholder="e.g. 5:00"
-        />
-      </label>
-      <p className="field-hint scale-hint">
-        This is the selection scale, not the detected video length. Enter a
-        larger value for longer videos (max. 24 hours).
-      </p>
-      {rangeError && (
-        <p className="form-error" role="alert">
-          {rangeError}
-        </p>
-      )}
-      <div className="range-actions">
-        <button className="secondary" onClick={onClose}>
-          Cancel
-        </button>
-        <button
-          className="primary"
-          onClick={() => {
-            if (!validExtent)
-              return setRangeError(
-                "The scale must include the selected end and cannot exceed 24 hours.",
-              );
-            onApply(from, to);
-          }}
-        >
-          <Check size={16} /> Use range
-        </button>
-      </div>
     </Modal>
   );
 }

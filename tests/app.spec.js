@@ -104,9 +104,7 @@ test("add, validate range, reload and share to a fresh browser", async ({
   await expect(recipient.getByRole("button", { name: "Sign in", exact: true })).toBeVisible();
   await context.close();
   await page.getByRole("button", { name: "Delete clip", exact: true }).click();
-  await expect(
-    page.getByRole("button", { name: "Play: Testowy cytat" }),
-  ).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Play: Testowy cytat" })).toHaveCount(0);
 });
 test("mobile layout and navigation", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -140,29 +138,12 @@ test("simplified form, dual range, optional metadata and searchable title", asyn
     form.getByRole("button", { name: "Transkrybuj", exact: true }),
   ).toHaveCount(0);
   await form.getByLabel("Clip title").fill("Kolejny deadline");
-  await form
-    .getByRole("button", { name: "Choose range", exact: true })
-    .click();
-  const range = page.getByRole("dialog", {
-    name: "Choose time range",
-    exact: true,
-  });
-  await range.getByRole("slider", { name: "Range end" }).fill("65");
-  await range.getByRole("slider", { name: "Range start" }).fill("43");
-  await range.getByRole("button", { name: "Use range" }).click();
-  await expect(form.getByLabel("Start", { exact: true })).toHaveValue(
-    "0:43",
-  );
+  await form.getByRole("slider", { name: "Range end" }).fill("65");
+  await form.getByRole("slider", { name: "Range start" }).fill("43");
+  await expect(form.getByLabel("Start", { exact: true })).toHaveValue("0:43");
   await expect(form.getByLabel("End", { exact: true })).toHaveValue("1:05");
-  await form
-    .getByRole("button", { name: "Choose range", exact: true })
-    .click();
-  await range
-    .getByRole("slider", { name: "Range end" })
-    .press("ArrowRight");
-  await range.press("Escape");
-  await expect(form).toBeVisible();
-  await expect(form.getByLabel("End", { exact: true })).toHaveValue("1:05");
+  await form.getByRole("slider", { name: "Range end" }).press("ArrowRight");
+  await expect(form.getByLabel("End", { exact: true })).toHaveValue("1:05.1");
   await expect(form.locator("input").first()).toHaveAttribute("type", "url");
   await expect(form.getByLabel("Movie, series, or channel")).not.toBeVisible();
   await form.getByText("Additional options", { exact: true }).click();

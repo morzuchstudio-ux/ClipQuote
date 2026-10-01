@@ -2291,3 +2291,46 @@ header.top-header {
 
 .clip-card { cursor: pointer; }
 .clip-card:focus-within { border-color: var(--accent); }
+
+/* One continuous workflow: watch, mark, fine-tune, preview. */
+.clip-editor { margin: 22px 0 28px; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+.clip-editor .editor-player { width: 100%; aspect-ratio: 16 / 9; min-height: 200px; background: #000; }
+.editor-player iframe { width: 100%; height: 100%; }
+.editor-watch { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; padding: 14px 18px; border-bottom: 1px solid var(--line); }
+.editor-watch output { font-variant-numeric: tabular-nums; font-size: 13px; }
+.editor-watch > span { font-size: 12px; color: var(--muted); }
+.editor-fields { margin: 0; padding: 18px; border: 0; min-width: 0; }
+.editor-fields > .field-hint:first-child { margin: 0 0 16px; }
+.editor-endpoints { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.editor-endpoint { min-width: 0; }
+.editor-endpoint > .secondary { width: 100%; margin-top: 8px; justify-content: center; }
+.editor-nudge { display: flex; gap: 8px; margin-top: 8px; }
+.editor-nudge button { flex: 1; justify-content: center; }
+.clip-editor .secondary { padding: 9px 12px; font-size: 12px; }
+.editor-preview { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin: 18px 0 12px; }
+.editor-preview > span { font-size: 12px; font-variant-numeric: tabular-nums; color: var(--muted); }
+.clip-editor .range-ticks { margin-bottom: 0; gap: 10px; }
+.clip-editor .range-ticks span:nth-child(2) { text-align: center; }
+.editor-fallback { padding: 18px; font-size: 13px; line-height: 1.6; }
+.editor-fallback img { width: 100%; max-height: 210px; object-fit: cover; border-radius: 8px; }
+.editor-fallback a { color: var(--accent); margin-right: 16px; }
+.editor-fields:disabled { opacity: .45; }
+@media (max-width: 520px) {
+  .editor-fields, .editor-watch { padding: 12px; }
+  .editor-endpoints { gap: 10px; }
+  .editor-nudge { gap: 4px; }
+  .clip-editor .secondary { padding: 9px 7px; }
+  .clip-editor .range-ticks span:nth-child(2) { max-width: 140px; }
+}
+
+.editor-player > div { height: 100%; }
+/* Offset the handles so a short selection remains draggable on long videos. */
+.clip-editor .dual-range { height: 70px; }
+.clip-editor .range-rail, .clip-editor .range-selection { top: 32px; }
+.modal .clip-editor .dual-range input { height: 70px; }
+.clip-editor .dual-range input::-webkit-slider-thumb { height: 22px; }
+.clip-editor .dual-range input::-moz-range-thumb { height: 18px; }
+.clip-editor .dual-range input:first-of-type::-webkit-slider-thumb { transform: translateY(-14px); }
+.clip-editor .dual-range input:last-of-type::-webkit-slider-thumb { transform: translateY(14px); }
+.clip-editor .dual-range input:first-of-type::-moz-range-thumb { transform: translateY(-14px); }
+.clip-editor .dual-range input:last-of-type::-moz-range-thumb { transform: translateY(14px); }

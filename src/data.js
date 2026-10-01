@@ -125,13 +125,18 @@ export function youtubeId(value) {
   }
 }
 export function seconds(value) {
-  if (!/^\d+(?::[0-5]\d){0,2}$/.test(String(value))) return NaN;
+  if (!/^\d+(?::[0-5]\d){0,2}(?:\.\d{1,3})?$/.test(String(value))) return NaN;
   return String(value)
     .split(":")
     .reduce((n, p) => n * 60 + Number(p), 0);
 }
-export const time = (n) =>
-  `${Math.floor(n / 60)}:${String(n % 60).padStart(2, "0")}`;
+export const roundTime = (n) => Math.round(n * 10) / 10;
+export function time(n) {
+  const ticks = Math.round(Math.max(0, Number.isFinite(n) ? n : 0) * 1000);
+  const whole = Math.floor(ticks / 1000);
+  const fraction = ticks % 1000 ? `.${String(ticks % 1000).padStart(3, "0").replace(/0+$/, "")}` : "";
+  return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, "0")}${fraction}`;
+}
 export function validClip(c) {
   return (
     c &&
@@ -139,8 +144,8 @@ export function validClip(c) {
     (c.title === undefined ||
       (typeof c.title === "string" && c.title.length <= 120)) &&
     /^[\w-]{11}$/.test(c.videoId) &&
-    Number.isInteger(c.start) &&
-    Number.isInteger(c.end) &&
+    Number.isFinite(c.start) &&
+    Number.isFinite(c.end) &&
     c.start >= 0 &&
     c.end > c.start &&
     c.end <= 86400 &&
