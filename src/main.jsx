@@ -842,6 +842,14 @@ function App() {
   );
 }
 function AddModal({ onClose, onSave }) {
+  const [step, setStep] = useState(1);
+  const stepHeading = useRef(null);
+  useEffect(() => {
+    if (step === 2) {
+      stepHeading.current?.focus();
+      stepHeading.current?.closest("dialog")?.scrollTo(0, 0);
+    }
+  }, [step]);
   const [url, setUrl] = useState(""),
     [title, setTitle] = useState(""),
     [start, setStart] = useState(""),
@@ -861,6 +869,7 @@ function AddModal({ onClose, onSave }) {
   async function submit(e) {
     e.preventDefault();
     if (!id) return setError("Enter a valid YouTube video link.");
+    if (step === 1) { setError(""); setStep(2); return; }
     if (!rangeValid)
       return setError(
         "Choose a valid range: the end must be after the start and within the video (max. 24 hours).",
@@ -893,9 +902,11 @@ function AddModal({ onClose, onSave }) {
         Add a new clip<span className="accent">.</span>
       </h2>
       <p className="form-intro">
-        Start with a link. Pick your moment and give it a title.
+        {step === 1 ? "Start with the YouTube video you want to clip." : "Pick your moment, preview it, and give it a title."}
       </p>
       <form onSubmit={submit}>
+        {step === 1 ? <>
+        <span className="step-label">Step 1 of 2 · Video link</span>
         <label>
           YouTube link
           <input
@@ -919,14 +930,22 @@ function AddModal({ onClose, onSave }) {
         <small className={id ? "link-status ready" : "link-status"}>
           {id ? (
             <>
-              <Check size={13} /> Link ready. Choose your time range.
+              <Check size={13} /> Link ready. Continue to choose your moment.
             </>
           ) : url ? (
-            "Paste a valid YouTube video link to unlock the fields."
+            "Enter a valid YouTube video link to continue."
           ) : (
-            "Paste a video link to unlock the other fields."
+            "Paste a YouTube video link to get started."
           )}
         </small>
+        <div className="form-footer step-footer">
+          <button disabled={!id} className="primary" type="submit">Next <ArrowRight size={17} /></button>
+        </div>
+        </> : <>
+        <div className="add-step-heading">
+          <span className="step-label" ref={stepHeading} tabIndex={-1}>Step 2 of 2 · Create your clip</span>
+          <button type="button" className="secondary" onClick={() => { setStep(1); setError(""); }}>Change link</button>
+        </div>
         <ClipEditor key={id || 'no-video'} videoId={id} start={start} end={end}
           onDuration={setVideoDuration}
           onChange={(nextStart, nextEnd) => { setStart(nextStart); setEnd(nextEnd); setError(""); }} />
@@ -1005,6 +1024,7 @@ function AddModal({ onClose, onSave }) {
             <Plus size={17} /> {submitting ? "Saving…" : "Save clip"}
           </button>
         </div>
+        </>}
       </form>
     </Modal>
   );

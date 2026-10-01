@@ -85,6 +85,17 @@ export default function ClipEditor({ videoId, start, end, onChange, onDuration }
   function change(nextStart, nextEnd) {
     stopPreview(); onChange(nextStart, nextEnd);
   }
+  function skip(amount) {
+    const p = player.current;
+    if (!ready || error || !p) return;
+    const wasPlaying = p.getPlayerState() === 1;
+    const target = Math.max(0, Math.min(max, roundTime(p.getCurrentTime() + amount)));
+    stopPreview();
+    if (!wasPlaying) p.pauseVideo();
+    p.seekTo(target, true);
+    setPosition(target);
+    if (wasPlaying) p.playVideo();
+  }
   function mark(which) {
     const current = Math.min(max, roundTime(player.current.getCurrentTime()));
     if (which === 'start') {
@@ -122,6 +133,16 @@ export default function ClipEditor({ videoId, start, end, onChange, onDuration }
       </div>}
     </>}
     <fieldset disabled={!videoId} className="editor-fields">
+      {videoId && <div className="editor-jumps" role="group" aria-label="Skip through video">
+        {[{label:'Backward', sign:-1, amounts:[5,3,1,0.5]}, {label:'Forward', sign:1, amounts:[0.5,1,3,5]}].map(({label, sign, amounts}) =>
+          <div key={label}><span>{label}</span><div className="editor-jump-buttons">
+            {amounts.map(amount => <button key={amount} type="button" className="secondary" disabled={!ready || !!error}
+              aria-label={`Skip ${label.toLowerCase()} ${amount} seconds`} onClick={() => skip(sign * amount)}>
+              {sign < 0 ? '−' : '+'}{amount}s
+            </button>)}
+          </div></div>)}
+      </div>}
+
       <p className="field-hint">Watch the video, then mark your start and end. You can also type exact times.</p>
       <div className="editor-endpoints">
         {['start', 'end'].map(which => <div className="editor-endpoint" key={which}>

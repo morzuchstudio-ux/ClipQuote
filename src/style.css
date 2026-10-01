@@ -2334,3 +2334,12 @@ header.top-header {
 .clip-editor .dual-range input:last-of-type::-webkit-slider-thumb { transform: translateY(14px); }
 .clip-editor .dual-range input:first-of-type::-moz-range-thumb { transform: translateY(-14px); }
 .clip-editor .dual-range input:last-of-type::-moz-range-thumb { transform: translateY(14px); }
+.step-label { color: var(--muted); font-size: 12px; font-weight: 600; }
+.add-step-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.add-step-heading .secondary { padding: 8px 12px; font-size: 12px; }
+.form-footer.step-footer { justify-content: flex-end; }
+.editor-jumps { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 18px; }
+.editor-jumps > div > span { display: block; color: var(--muted); font-size: 11px; margin-bottom: 7px; }
+.editor-jump-buttons { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
+.editor-jump-buttons .secondary { padding: 8px 4px; justify-content: center; font-variant-numeric: tabular-nums; }
+@media (max-width: 520px) { .editor-jumps { grid-template-columns: 1fr; gap: 10px; } }

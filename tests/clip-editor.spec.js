@@ -7,6 +7,7 @@ async function openEditor(page) {
   await page.goto('/');
   await page.getByRole('button', {name:'Add clip',exact:true}).click();
   await page.getByLabel('YouTube link').fill('https://youtu.be/1YZEE9-2BWE');
+  await page.getByRole("button", {name:"Next",exact:true}).click();
   await expect(page.getByRole('button',{name:'Set start here'})).toBeEnabled();
 }
 test('fractional timestamps validate and format without floating point noise', () => {
@@ -73,7 +74,9 @@ test('timeline uses video duration, clamps handles and changing source clears ol
   await page.getByLabel('Clip title').fill('Invalid range');
   await page.getByRole('button',{name:'Save clip',exact:true}).click();
   await expect(page.getByText('Choose a valid range:',{exact:false})).toBeVisible();
+  await page.getByRole('button',{name:'Change link',exact:true}).click();
   await page.getByLabel('YouTube link').fill('https://youtu.be/dQw4w9WgXcQ');
+  await page.getByRole("button", {name:"Next",exact:true}).click();
   await expect(page.getByLabel('Start',{exact:true})).toHaveValue('');
   await expect(page.getByLabel('End',{exact:true})).toHaveValue('');
   await expect(page.getByRole('button',{name:'Set start here'})).toBeEnabled();

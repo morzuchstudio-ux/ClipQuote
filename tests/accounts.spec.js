@@ -19,6 +19,7 @@ test("failed online save keeps the draft and does not claim success", async ({ p
   await expect(page.getByRole("button", { name: "Account", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Add clip", exact: true }).click();
   await page.getByLabel("YouTube link").fill("https://youtu.be/1YZEE9-2BWE");
+  await page.getByRole("button", {name:"Next",exact:true}).click();
   await page.getByLabel("Clip title").fill("Unsaved draft");
   await page.getByLabel("Start", { exact: true }).fill("7");
   await page.getByLabel("End", { exact: true }).fill("10");

@@ -25,7 +25,10 @@ export async function mockYouTube(page) {
           this.loads.push(range);
           this.range = range;
           this.current = range.startSeconds;
-          this.change(1);
+          if (window.testBlockAutoplay) {
+            this.change(5);
+            this.options.events.onAutoplayBlocked?.();
+          } else this.change(1);
         }
         change(state) {
           this.state = state;

@@ -13,8 +13,9 @@ async function openClip(page) {
   await mockYouTube(page);
   await page.goto("/#" + new URLSearchParams({ clip: JSON.stringify(sample) }));
   await expect(
-    page.getByRole("button", { name: "Play clip", exact: true }),
+    page.getByRole("button", { name: "Pause", exact: true }),
   ).toBeEnabled();
+  await page.getByRole("button", { name: "Pause", exact: true }).click();
 }
 test("legacy write endpoint is closed and missing links handled", async ({ request, page }) => {
   expect((await request.post("/api/clips", { data: sample })).status()).toBe(401);
@@ -44,7 +45,7 @@ test("clip-relative seeking, end stop, replay, loop, cleanup", async ({
   await page.evaluate(() => (window.testPlayer.current = 10.01));
   await expect
     .poll(() => page.evaluate(() => window.testPlayer.loads.length))
-    .toBe(2);
+    .toBe(3);
   expect(await page.evaluate(() => window.testPlayer.current)).toBe(7);
   await page.evaluate(() => (window.testPlayer.current = 2));
   await expect
@@ -77,5 +78,5 @@ test("failed embed hides controls and offers timestamped fallback", async ({ pag
   await expect(page.getByRole("button", { name: "Play clip", exact: true })).toHaveCount(0);
   await expect(page.getByRole("link", { name: "Watch on YouTube ↗" })).toHaveAttribute("href", "https://www.youtube.com/watch?v=1YZEE9-2BWE&t=7s");
   await page.getByRole("button", { name: "Try again", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Play clip", exact: true })).toBeEnabled();
+  await expect(page.getByRole("button", { name: "Pause", exact: true })).toBeEnabled();
 });

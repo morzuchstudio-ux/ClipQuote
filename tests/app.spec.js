@@ -61,6 +61,7 @@ test("add, validate range, reload and share to a fresh browser", async ({
 }) => {
   await page.getByRole("button", { name: "Add clip", exact: true }).click();
   await page.getByLabel("YouTube link").fill("https://youtu.be/dQw4w9WgXcQ");
+  await page.getByRole("button", {name:"Next",exact:true}).click();
   await page.getByLabel("Start", { exact: true }).fill("0:43");
   await page.getByLabel("End", { exact: true }).fill("0:40");
   await page.getByLabel("Clip title").fill("Testowy cytat");
@@ -125,14 +126,15 @@ test("simplified form, dual range, optional metadata and searchable title", asyn
 }) => {
   await page.getByRole("button", { name: "Add clip", exact: true }).click();
   const form = page.getByRole("dialog", { name: "Add clip", exact: true });
-  await expect(form.getByLabel("Clip title")).toBeDisabled();
-  await expect(form.getByLabel("Start", { exact: true })).toBeDisabled();
+  await expect(form.getByLabel("Clip title")).toHaveCount(0);
+  await expect(form.getByLabel("Start", { exact: true })).toHaveCount(0);
   await expect(form.getByLabel("Quote", { exact: true })).toHaveCount(0);
   await form
     .getByLabel("YouTube link")
     .fill("https://example.com/watch?v=dQw4w9WgXcQ");
   await expect(form.getByLabel("Quote", { exact: true })).toHaveCount(0);
   await form.getByLabel("YouTube link").fill("https://youtu.be/dQw4w9WgXcQ");
+  await form.getByRole("button", {name:"Next",exact:true}).click();
   await expect(form.getByLabel("Clip title")).toBeEnabled();
   await expect(
     form.getByRole("button", { name: "Transkrybuj", exact: true }),
@@ -144,7 +146,7 @@ test("simplified form, dual range, optional metadata and searchable title", asyn
   await expect(form.getByLabel("End", { exact: true })).toHaveValue("1:05");
   await form.getByRole("slider", { name: "Range end" }).press("ArrowRight");
   await expect(form.getByLabel("End", { exact: true })).toHaveValue("1:05.1");
-  await expect(form.locator("input").first()).toHaveAttribute("type", "url");
+
   await expect(form.getByLabel("Movie, series, or channel")).not.toBeVisible();
   await form.getByText("Additional options", { exact: true }).click();
   await expect(form.getByLabel("Movie, series, or channel")).toBeVisible();
@@ -158,9 +160,11 @@ test("simplified form, dual range, optional metadata and searchable title", asyn
   ).toBeVisible();
   await page.getByRole("button", { name: "Add clip", exact: true }).click();
   await form.getByLabel("YouTube link").fill("https://youtu.be/dQw4w9WgXcQ");
+  await form.getByRole("button", {name:"Next",exact:true}).click();
   await form.getByLabel("Start", { exact: true }).fill("10");
   await form.getByLabel("End", { exact: true }).fill("20");
+  await form.getByRole("button", {name:"Change link",exact:true}).click();
   await form.getByLabel("YouTube link").fill("");
-  await expect(form.getByLabel("Start", { exact: true })).toBeDisabled();
-  await expect(form.getByLabel("Start", { exact: true })).toHaveValue("");
+  await expect(form.getByLabel("Start", { exact: true })).toHaveCount(0);
+  await expect(form.getByRole("button", {name:"Next",exact:true})).toBeDisabled();
 });
