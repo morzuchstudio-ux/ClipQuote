@@ -1,3 +1,4 @@
+import { cleanClipMetadata } from "./data";
 import { createClient } from "@supabase/supabase-js";
 export const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL,
@@ -11,7 +12,7 @@ export function unwrap(result) {
 export async function saveOnline(clip, userId) {
   // Always create a personal copy; never accept another user's ownership or ID.
   const id = crypto.randomUUID();
-  const clean = { ...clip, id };
+  const clean = { ...cleanClipMetadata(clip), id };
   unwrap(await supabase.from("clips").insert({ id, owner_id: userId, data: clean }));
   return clean;
 }

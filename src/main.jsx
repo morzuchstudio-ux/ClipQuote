@@ -28,6 +28,7 @@ import {
   seconds,
   time,
   validClip,
+  cleanClipMetadata,
   sharedClip,
 } from "./data";
 import "./style.css";
@@ -93,6 +94,16 @@ function App() {
     } catch {}
   }, [theme]);
   const [custom, setCustom] = useState([]);
+  const [managedClips, setManagedClips] = useState([]);
+  const [hiddenExamples, setHiddenExamples] = useState([]);
+  const [deleting, setDeleting] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    supabase.rpc("hidden_example_ids").then(({ data, error }) => {
+      if (!cancelled && !error) setHiddenExamples(data || []);
+    });
+    return () => { cancelled = true; };
+  }, []);
   const [favorites, setFavorites] = useState([]);
   const [session, setSession] = useState(null);
   const [role, setRole] = useState(null);
@@ -121,7 +132,7 @@ function App() {
   }, []);
   useEffect(() => {
     let stale = false;
-    setCustom([]); setFavorites([]); setRole(null);
+    setCustom([]); setManagedClips([]); setFavorites([]); setRole(null);
     if (!session) return;
     (async () => {
       try {
@@ -129,13 +140,15 @@ function App() {
         if (stale) return;
         setRole(nextRole);
         if (!nextRole) { setLibraryError("Your account is not approved. Contact the administrator."); return; }
-        const [clips, likes] = await Promise.all([
+        const [clips, likes, managed] = await Promise.all([
           supabase.from("clips").select("id,data").eq("owner_id", session.user.id).order("created_at", { ascending: false }),
           supabase.from("favorites").select("clip_id").eq("owner_id", session.user.id),
+          nextRole === "admin" ? supabase.rpc("admin_clip_catalog") : Promise.resolve({ data: [], error: null }),
         ]);
-        const records = unwrap(clips).map((r) => ({ ...r.data, id: r.id })).filter(validClip);
+        const records = unwrap(clips).map((r) => ({ ...cleanClipMetadata(r.data), id: r.id })).filter(validClip);
         const ids = unwrap(likes).map((r) => r.clip_id);
-        if (!stale) { setCustom(records); setFavorites(ids); setLibraryError(""); }
+        const catalog = unwrap(managed).filter(validClip);
+        if (!stale) { setManagedClips(catalog); setCustom(records); setFavorites(ids); setLibraryError(""); }
       } catch (e) { if (!stale) setLibraryError("Could not load your online library. " + e.message); }
     })();
     return () => { stale = true; };
@@ -219,7 +232,7 @@ function App() {
         if (!response.ok || !validClip(data.clip))
           throw new Error(data.error || "Invalid clip link.");
         if (!controller.signal.aborted) {
-          setActive(data.clip);
+          setActive(cleanClipMetadata(data.clip));
           setLinkState(null);
         }
       })
@@ -253,7 +266,9 @@ function App() {
       removeEventListener("keydown", onKey);
     };
   }, []);
-  const all = [...custom, ...seedClips, ...demoClips];
+  const all = [...custom,
+    ...(role === "admin" ? managedClips.filter((c) => !custom.some((x) => x.id === c.id)) : []),
+    ...[...seedClips, ...demoClips].filter((c) => !hiddenExamples.includes(c.id))];
   const norm = (s) =>
     s
       .toLocaleLowerCase("pl")
@@ -290,7 +305,8 @@ function App() {
   async function share(c) {
     if (sharing) return;
     // Anyone can forward the public link they are already viewing.
-    const existingLink = route.startsWith("/c/") && active?.id === c.id ? location.href : null;
+    const existingLink = c._legacyLink ? new URL("/c/" + c._legacyLink, location.origin).href :
+      route.startsWith("/c/") && active?.id === c.id ? location.href : null;
     if (!existingLink && !requireAccount()) return;
     setSharing(true);
     try {
@@ -308,13 +324,30 @@ function App() {
     finally { setSharing(false); }
   }
   async function deleteClip(c) {
-    if (!requireAccount()) return;
+    if (!requireAccount() || deleting) return;
+    const example = [...seedClips, ...demoClips].some((x) => x.id === c.id);
+    const legacyKey = c._legacyLink || (route.startsWith("/c/") && /^[\w-]{16}$/.test(route.slice(3)) ? route.slice(3) : null);
+    if (role === "admin" && !window.confirm(example
+      ? "Remove this example from everyone's catalog?"
+      : "Delete this clip permanently? Its shared link will stop working.")) return;
+    setDeleting(true);
     try {
-      const deleted = unwrap(await supabase.from("clips").delete().eq("id", c.id).eq("owner_id", session.user.id).select("id"));
-      if (!deleted.length) throw new Error("Clip not found or access was revoked.");
+      if (role === "admin") {
+        unwrap(await supabase.rpc("admin_delete_clip", {
+          clip_kind: legacyKey ? "legacy" : example ? "example" : "saved",
+          clip_key: legacyKey || c.id,
+        }));
+        if (example) setHiddenExamples((p) => [...p, c.id]);
+      } else {
+        const deleted = unwrap(await supabase.from("clips").delete().eq("id", c.id).eq("owner_id", session.user.id).select("id"));
+        if (!deleted.length) throw new Error("Clip not found or access was revoked.");
+      }
       setCustom((p) => p.filter((x) => x.id !== c.id));
-      closePlayer(); setToast("Clip and its shared link deleted.");
+      setManagedClips((p) => p.filter((x) => x.id !== c.id && (!legacyKey || x._legacyLink !== legacyKey)));
+      setFavorites((p) => p.filter((id) => id !== c.id));
+      closePlayer(); setToast(example ? "Example removed from the catalog." : "Clip and its shared link deleted.");
     } catch (e) { setToast("Could not delete clip. " + e.message); }
+    finally { setDeleting(false); }
   }
   function navigate(v) {
     setView(v);
@@ -535,6 +568,9 @@ function App() {
               {filtered.map((c, i) => (
                 <article
                   className="clip-card"
+                  onClick={(e) => {
+                    if (!e.target.closest("button, a, input, select")) setActive(c);
+                  }}
                   key={c.id}
                   style={{
                     "--card-color": c.color || "#606060",
@@ -689,7 +725,7 @@ function App() {
           <ClipPlayer key={active.id} clip={active} />
           <div className="player-info">
             <span className="eyebrow">
-              {active.source || "YouTube"} · {time(active.start)}–
+              {active._kind === "legacy" ? "Migrated clip" : active.source || "YouTube"} · {time(active.start)}–
               {time(active.end)}
             </span>
             <h2>{active.title || `“${active.quote}”`}</h2>
@@ -726,10 +762,11 @@ function App() {
                   Save clip
                 </button>
               )}
-              {custom.some((c) => c.id === active.id) && (
+              {(role === "admin" || custom.some((c) => c.id === active.id)) && (
                 <button
                   className="icon-button"
                   aria-label="Delete clip"
+                  disabled={deleting}
                   onClick={() => deleteClip(active)}
                 >
                   <Trash2 size={18} />

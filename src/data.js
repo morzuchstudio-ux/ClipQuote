@@ -155,12 +155,16 @@ export function validClip(c) {
     c.tags.every((t) => typeof t === "string")
   );
 }
+export function cleanClipMetadata(clip) {
+  const { _kind, _ownerId, _legacyLink, ...data } = clip;
+  return data;
+}
 export function sharedClip() {
   try {
     const raw = new URLSearchParams(location.hash.slice(1)).get("clip");
     if (!raw) return null;
     const c = JSON.parse(raw);
-    return validClip(c) ? c : null;
+    return validClip(c) ? cleanClipMetadata(c) : null;
   } catch {
     return null;
   }

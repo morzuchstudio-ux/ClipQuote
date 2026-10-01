@@ -2288,3 +2288,6 @@ header.top-header {
 .member-list li { display:flex; justify-content:space-between; gap:12px; padding:12px 0; border-bottom:1px solid var(--line); }
 .member-list span { overflow-wrap:anywhere; }
 .member-list small { display:block; color:var(--muted); margin-top:4px; }
+
+.clip-card { cursor: pointer; }
+.clip-card:focus-within { border-color: var(--accent); }

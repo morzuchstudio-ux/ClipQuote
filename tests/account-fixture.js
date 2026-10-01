@@ -13,7 +13,18 @@ export async function mockAccount(context, state, signedIn = true) {
     const req = route.request(), url = new URL(req.url()), path = url.pathname;
     const body = req.postData() ? JSON.parse(req.postData()) : {};
     let data = null;
-    if (path.endsWith("/current_member_role")) data = state.role;
+    if (path.endsWith("/hidden_example_ids")) data = state.hidden || [];
+    else if (path.endsWith("/admin_clip_catalog")) data = state.managed || [];
+    else if (path.endsWith("/admin_delete_clip")) {
+      if (state.role !== "admin") return route.fulfill({ status: 403, json: { message: "Admin access required." } });
+      state.deleted = body;
+      if (body.clip_kind === "example") state.hidden = [...(state.hidden || []), body.clip_key];
+      else {
+        state.managed = (state.managed || []).filter((c) => c.id !== body.clip_key && c._legacyLink !== body.clip_key);
+        state.clips = state.clips.filter((c) => c.id !== body.clip_key);
+      }
+    }
+    else if (path.endsWith("/current_member_role")) data = state.role;
     else if (path.endsWith("/admin_members")) data = state.members || [];
     else if (path.endsWith("/admin_set_member")) {
       if (state.role !== "admin") return route.fulfill({ status: 403, json: { message: "Admin access required." } });

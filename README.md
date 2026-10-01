@@ -19,6 +19,7 @@ Preview: http://127.0.0.1:5188. Local development uses the configured **remote S
 
 - Google OAuth uses PKCE. Supabase redirect URLs must include the production origin and http://127.0.0.1:5188/ for local testing.
 - The approved-email list is private. New Auth accounts are blocked unless approved. Permissions resolve from the verified Auth email; users cannot assign themselves roles.
+- Admin Explore includes all saved clips and migrated links. Admin can delete any saved/migrated clip (invalidating its link), or remove a built-in example from the catalog for everyone. The admin deletion RPC checks the verified account role.
 - Admin can approve/suspend emails through the Account panel. No invitation emails are sent. Suspended accounts lose database access even with existing sessions; this does not delete their Auth account or revoke previously public clip links.
 - New clips and favorites save directly to Supabase under the signed-in owner. RLS enforces ownership and approved membership. Failed saves preserve the form draft.
 - Browser clips can be imported explicitly. Original `cq-clips` and `cq-favorites` remain as recovery copies; account libraries are not stored in those keys. The theme and auth session are stored locally.
